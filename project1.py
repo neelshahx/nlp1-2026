@@ -69,4 +69,88 @@
 # * Summarise your motivations and findings;
 # * Document your sources and any form of AI-assistance you use.
 
+# %% [markdown]
+# ## Setup
+#
+# Architecture: `.scratch/project1/spec.md`. Vocabulary: `GLOSSARY.md`. Leakage rules: `docs/adr/0001-leakage-boundaries.md`.
+# Everything below is a thin driver over the `nli` package; run `uv run pytest` first.
+
+# %%
+import pandas as pd
+
+from nli import data, eda, plotting
+from nli.compare import compare, compare_across_datasets
+from nli.ensemble import ensemble_on_dev
+from nli.experiment import EXAMPLE_CONFIG, grid, run_experiment
+from nli.store import load_results
+
+DATASETS = ["snli", "mnli", "anli"]
+
+# %% [markdown]
+# ## 1. Data and metrics
+#
+# Label distribution per split, length statistics, hypothesis-only cue words (Gururangan et al. 2018).
+# Metrics: accuracy (primary), macro-F1. Folds: stratified k=5, data seed 0, shared by every experiment on a dataset.
+
+# %%
+toy = data.load_dataset("toy")
+eda.label_distribution(toy)
+
+# %%
+# snli = data.load_dataset("snli")
+# eda.label_distribution(snli)
+# eda.length_stats(snli["train"], tokenizer)      # TODO: stub
+# eda.hypothesis_cue_words(snli["train"], tokenizer)   # TODO: stub
+
+# %% [markdown]
+# ## 2. Features
+#
+# Tokenizers: `wordlevel` (baseline), `bpe` (Neel). Representations: `indicator`, `bow` (Emil), `ngram` (Neel),
+# `lengths` (length-artifact baseline). Pairing: `concat` (default), `joint`, `hypothesis_only`.
+
+# %%
+smoke = run_experiment(EXAMPLE_CONFIG)
+smoke
+
+# %%
+# hypothesis_only_baseline = {
+#     **EXAMPLE_CONFIG,
+#     "name": "snli-hyp-only-bow-loglin",
+#     "dataset": {"name": "snli"},
+#     "tokenizer": {"kind": "bpe", "vocab_size": 8000},
+#     "representation": {"kind": "bow", "pairing": "hypothesis_only"},
+#     "model": {"kind": "loglinear", "C": 1.0},
+# }
+
+# %% [markdown]
+# ## 3. Architectures
+#
+# Models: `majority` (floor), `loglinear` (Neel), `mlp` (Emil), plus a third of our choice.
+# Hyperparameter search is a grid of experiments, selected by mean CV score.
+
+# %%
+# base = {...}
+# configs = grid(base, {"model.C": [0.1, 1.0, 10.0], "representation.n": [1, 2]})
+# results = [run_experiment(c) for c in configs]
+
+# %% [markdown]
+# ## 4. Results
+#
+# Per-fold score distributions, ROPE comparisons between the top candidates (within and across datasets),
+# ensembles of fold models on the dev set.
+
+# %%
+table = load_results()
+plotting.plot_scores(table, metric="accuracy")
+
+# %%
+# a, b = results[0], results[1]
+# compare(a, b, metric="accuracy", rope=0.01, plot=True)
+# ensemble_on_dev(a, "mean_proba")
+
+# %% [markdown]
+# ## 5. Extra
+#
+# Matched vs mismatched gap on MNLI, hard-subset scores, error analysis by genre/round, the logic-based question.
+
 # %%
