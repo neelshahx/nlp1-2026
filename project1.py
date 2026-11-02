@@ -71,9 +71,6 @@
 
 # %% [markdown]
 # ## Setup
-#
-# Architecture: `.scratch/project1/spec.md`. Vocabulary: `GLOSSARY.md`. Leakage rules: `docs/adr/0001-leakage-boundaries.md`.
-# Everything below is a thin driver over the `nli` package; run `uv run pytest` first.
 
 # %%
 import pandas as pd
