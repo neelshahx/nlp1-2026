@@ -1,5 +1,4 @@
 """Plots (core: every function takes DataFrames or Results and returns a matplotlib Figure)."""
-from __future__ import annotations
 
 import matplotlib.pyplot as plt
 import pandas as pd

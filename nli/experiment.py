@@ -4,20 +4,27 @@ A config is a plain nested dict, one block per stage (see ``EXAMPLE_CONFIG``). `
 selects the concrete class; every other key in a block is passed to it as a keyword
 argument, so a new hyperparameter needs no change here.
 """
-from __future__ import annotations
 
 import copy
 import hashlib
 import json
 from pathlib import Path
 
-from .data import DATASETS, load_dataset
+from .data import load_anli, load_mnli, load_snli, load_toy
 from .folds import make_folds
 from .metrics import METRICS, score
 from .models import MODELS, build_model
 from .representations import REPRESENTATIONS, build_representation
-from .store import (Result, has_result, load_result, model_path, models_dir, tokenizers_dir,
-                    write_predictions, write_result)
+from .store import (
+    Result,
+    has_result,
+    load_result,
+    model_path,
+    models_dir,
+    tokenizers_dir,
+    write_predictions,
+    write_result,
+)
 from .tokenizers import TOKENIZERS, Tokenizer, build_tokenizer
 
 EXAMPLE_CONFIG = {
@@ -29,6 +36,8 @@ EXAMPLE_CONFIG = {
     "model_seeds": [0],
     "metrics": list(METRICS),
 }
+
+DATASETS = {"anli": load_anli, "mnli": load_mnli, "snli": load_snli, "toy": load_toy}
 
 _DATASET_DEFAULTS = {"k": 5, "data_seed": 0, "rounds": None}
 
@@ -80,7 +89,7 @@ def grid(base: dict, overrides: dict[str, list]) -> list[dict]:
     for values in itertools.product(*(overrides[k] for k in keys)):
         cfg = copy.deepcopy(base)
         suffix = []
-        for key, value in zip(keys, values):
+        for key, value in zip(keys, values, strict=True):
             *path, leaf = key.split(".")
             node = cfg
             for p in path:
@@ -127,7 +136,8 @@ def run_experiment(config: dict, root: Path | str = ".", force: bool = False, ve
             print(f"[{eid}] already run; loading")
         return load_result(root, eid)
 
-    data = load_dataset(cfg["dataset"]["name"], cfg["dataset"]["rounds"])
+    name, rounds = cfg["dataset"]["name"], cfg["dataset"]["rounds"]
+    data = load_anli(tuple(rounds)) if name == "anli" and rounds else DATASETS[name]()
     train, dev = data["train"], data["dev"]
     y = train["label"].to_numpy()
     tokenizer = get_or_train_tokenizer(cfg, train, root)
@@ -149,7 +159,9 @@ def run_experiment(config: dict, root: Path | str = ".", force: bool = False, ve
             write_predictions(root, eid, seed, fold_i, "dev", dev["id"], dev["label"].to_numpy(), dev_probs)
             model.save(model_path(root, eid, seed, fold_i))
             if verbose:
-                print(f"[{eid}] seed {seed} fold {fold_i}: " + ", ".join(f"{m}={v:.4f}" for m, v in fold_scores.items()))
+                print(
+                    f"[{eid}] seed {seed} fold {fold_i}: " + ", ".join(f"{m}={v:.4f}" for m, v in fold_scores.items())
+                )
 
     import pandas as pd
 

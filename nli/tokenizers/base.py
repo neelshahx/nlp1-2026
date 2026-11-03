@@ -1,9 +1,8 @@
 """Tokenizer interface. A Tokenizer segments one text into tokens; it knows nothing about pairs."""
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 
 class Tokenizer(ABC):

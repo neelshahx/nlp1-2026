@@ -1,4 +1,5 @@
 """End-to-end smoke test on the toy dataset. Run with ``uv run pytest``."""
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -58,8 +59,7 @@ def test_combiners():
 
 def _fake_result(id, scores, seeds=(0,)):
     cfg = validate_config({**EXAMPLE_CONFIG, "name": id, "model_seeds": list(seeds)})
-    rows = [{"seed": s, "fold": f, "metric": "accuracy", "value": v}
-            for s in seeds for f, v in enumerate(scores)]
+    rows = [{"seed": s, "fold": f, "metric": "accuracy", "value": v} for s in seeds for f, v in enumerate(scores)]
     return Result(id, cfg, pd.DataFrame(rows))
 
 

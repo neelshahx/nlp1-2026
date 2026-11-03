@@ -3,7 +3,6 @@
 The tutorial left ``BagOfWords`` as an empty stub. Hyperparameters worth exposing:
 ``binary``, ``normalize`` (counts vs. frequencies), ``min_df``.
 """
-from __future__ import annotations
 
 import scipy.sparse as sp
 

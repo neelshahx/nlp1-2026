@@ -9,10 +9,9 @@ Layout, relative to ``root`` (the repo by default)::
     models/<id>/seed-S-fold-K.<ext>                 fitted Fold models
     models/tokenizers/<dataset>-<tokenizer id>.<ext>
 """
-from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -57,6 +56,7 @@ class Result:
 
 # --- paths --------------------------------------------------------------------
 
+
 def results_dir(root: Path, id: str) -> Path:
     return Path(root) / "results" / id
 
@@ -75,6 +75,7 @@ def model_path(root: Path, id: str, seed: int, fold: int) -> Path:
 
 # --- write ---------------------------------------------------------------------
 
+
 def write_result(root: Path, result: Result) -> None:
     d = results_dir(root, result.id)
     d.mkdir(parents=True, exist_ok=True)
@@ -83,8 +84,9 @@ def write_result(root: Path, result: Result) -> None:
     _append_index(root, result)
 
 
-def write_predictions(root: Path, id: str, seed: int, fold: int, split: str,
-                      ids: pd.Series, labels: np.ndarray, probs: np.ndarray) -> None:
+def write_predictions(
+    root: Path, id: str, seed: int, fold: int, split: str, ids: pd.Series, labels: np.ndarray, probs: np.ndarray
+) -> None:
     d = results_dir(root, id) / "predictions"
     d.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(probs, columns=PROB_COLUMNS)
@@ -96,16 +98,20 @@ def write_predictions(root: Path, id: str, seed: int, fold: int, split: str,
 def _append_index(root: Path, result: Result) -> None:
     path = Path(root) / "results" / "index.csv"
     c = result.config
-    row = pd.DataFrame([{
-        "id": result.id,
-        "name": c["name"],
-        "dataset": c["dataset"]["name"],
-        "tokenizer": c["tokenizer"]["kind"],
-        "representation": c["representation"]["kind"],
-        "model": c["model"]["kind"],
-        "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "config_json": json.dumps(c, sort_keys=True),
-    }])
+    row = pd.DataFrame(
+        [
+            {
+                "id": result.id,
+                "name": c["name"],
+                "dataset": c["dataset"]["name"],
+                "tokenizer": c["tokenizer"]["kind"],
+                "representation": c["representation"]["kind"],
+                "model": c["model"]["kind"],
+                "created": datetime.now(UTC).isoformat(timespec="seconds"),
+                "config_json": json.dumps(c, sort_keys=True),
+            }
+        ]
+    )
     if path.exists():
         index = pd.read_csv(path)
         index = pd.concat([index[index["id"] != result.id], row], ignore_index=True)
@@ -115,6 +121,7 @@ def _append_index(root: Path, result: Result) -> None:
 
 
 # --- read ----------------------------------------------------------------------
+
 
 def has_result(root: Path, id: str) -> bool:
     return (results_dir(root, id) / "folds.csv").exists()
@@ -140,8 +147,20 @@ def load_results(root: Path = ".") -> pd.DataFrame:
             scores[col] = row[col]
         parts.append(scores)
     if not parts:
-        return pd.DataFrame(columns=["id", "name", "dataset", "tokenizer", "representation", "model",
-                                     "seed", "fold", "metric", "value"])
+        return pd.DataFrame(
+            columns=[
+                "id",
+                "name",
+                "dataset",
+                "tokenizer",
+                "representation",
+                "model",
+                "seed",
+                "fold",
+                "metric",
+                "value",
+            ]
+        )
     return pd.concat(parts, ignore_index=True)
 
 

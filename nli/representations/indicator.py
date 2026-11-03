@@ -5,7 +5,6 @@ there: ``__len__`` reads a global ``tokenizer`` instead of ``self.tokenizer``; i
 dense row per text which callers then convert to CSR. Build the CSR matrix directly.
 The vocabulary is the Tokenizer's, so ``fit_texts`` is a no-op.
 """
-from __future__ import annotations
 
 import scipy.sparse as sp
 

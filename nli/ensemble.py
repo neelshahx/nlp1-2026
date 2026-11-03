@@ -1,12 +1,11 @@
 """Ensembles: a set of fitted Models plus a Combiner, scored on the dev set."""
-from __future__ import annotations
 
 from pathlib import Path
 
 import numpy as np
 
 from .data import LABELS
-from .metrics import METRICS, score
+from .metrics import score
 from .store import Result, read_predictions
 
 COMBINERS = ("mean_proba", "majority")
@@ -28,8 +27,9 @@ def combine(probs_list: list[np.ndarray], combiner: str) -> np.ndarray:
     raise ValueError(f"unknown combiner {combiner!r}; choose from {COMBINERS}")
 
 
-def ensemble_on_dev(result: Result, combiner: str = "mean_proba", root: Path | str = ".",
-                    seeds: list[int] | None = None) -> dict[str, float]:
+def ensemble_on_dev(
+    result: Result, combiner: str = "mean_proba", root: Path | str = ".", seeds: list[int] | None = None
+) -> dict[str, float]:
     """Score the Ensemble of a Result's Fold models (all seeds by default) on the dev set.
 
     Reads the dev predictions ``run_experiment`` stored, so no model is reloaded.

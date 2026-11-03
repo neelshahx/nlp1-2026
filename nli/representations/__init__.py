@@ -19,5 +19,12 @@ def build_representation(config: dict, tokenizer: Tokenizer) -> Representation:
     return REPRESENTATIONS[config["kind"]](tokenizer, **kwargs)
 
 
-__all__ = ["Features", "Representation", "VectorRepresentation", "PAIRINGS", "sides",
-           "REPRESENTATIONS", "build_representation"]
+__all__ = [
+    "Features",
+    "Representation",
+    "VectorRepresentation",
+    "PAIRINGS",
+    "sides",
+    "REPRESENTATIONS",
+    "build_representation",
+]

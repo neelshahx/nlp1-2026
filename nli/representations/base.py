@@ -3,7 +3,6 @@
 A Representation receives both premise and hypothesis and decides how to combine them.
 Its vocabulary (if any) is fitted per fold on the training portion only (ADR-0001).
 """
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Any

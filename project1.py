@@ -19,22 +19,22 @@
 # Welcome to the first NLP1 project. The goal of the first tutorial was to get you familiar with text segmentation and simple text classification for topic detection.
 # Given the skills you have developed in the first week, you will now be applying them within a different dataset and task.
 #
-# We are recommending a set of tasks and associated datasets; using those, you will be experimenting on problems introduced during the tutorials. You will be applying hands-on the experiments you have already explored in the last tutorial, and taking a deeper dive: extending your experiments, trying different set ups, possibly considering different evaluation techniques and analysing errors. 
+# We are recommending a set of tasks and associated datasets; using those, you will be experimenting on problems introduced during the tutorials. You will be applying hands-on the experiments you have already explored in the last tutorial, and taking a deeper dive: extending your experiments, trying different set ups, possibly considering different evaluation techniques and analysing errors.
 #
-# The week after the deadline, your TA will perform a short oral assessment of the skills and knowledge you acquired (make sure to check the official schedule for this), probing you to answer questions about what you learnt, about what you did and about why you did the things you did (as opposed to some reasonable alternatives) as well as pros and cons of your method, and so on. 
+# The week after the deadline, your TA will perform a short oral assessment of the skills and knowledge you acquired (make sure to check the official schedule for this), probing you to answer questions about what you learnt, about what you did and about why you did the things you did (as opposed to some reasonable alternatives) as well as pros and cons of your method, and so on.
 #
-# As the tutorials will be building upon your knowledge throughout the weeks, the task and dataset you choose now will be the ones you use in projects 2 and 3; and the ones you will be finally writing about in your final blog post.  
+# As the tutorials will be building upon your knowledge throughout the weeks, the task and dataset you choose now will be the ones you use in projects 2 and 3; and the ones you will be finally writing about in your final blog post.
 
-# %% [markdown]
+# %% [markdown] jp-MarkdownHeadingCollapsed=true
 # ## Get to work!
 
 # %% [markdown]
-# The next section has a checklist to help you not lose track of what needs to be done. Here we have a more informal guide, with prompts and questions for you. 
+# The next section has a checklist to help you not lose track of what needs to be done. Here we have a more informal guide, with prompts and questions for you.
 #
 #
 # 1. [Choose a dataset](http://nlp-illc.github.io/nlp1/). Spend some time understanding how the dataset looks and some statistics of it (e.g. how many instances of each classification label we have?)
 # 2. Remember what we learnt during the tutorial: to develop any classifier of the kind we saw, we needed a way to segment text. Do you want to use the tokeniser we have developed? Do you need to train a new one? If you do, what hyperparameters shall you use? What data shall you use to train it? Consider that your dataset may be too small to train a tokeniser! Think whether you will need a larger resource of similar nature to train a tokeniser.
-# 3. Start thinking how to represent your documents into features. We have experimented with token occurences and frequencies. Can you think of any other ways, possibly? 
+# 3. Start thinking how to represent your documents into features. We have experimented with token occurences and frequencies. Can you think of any other ways, possibly?
 # 4. We had experimented with Logistic Regression and a shallow neural network. You can experiment with and assess different architectures now and their hyper parameters (e.g. add layers, possibly change the activation functions, drop out rates).
 # 5. Evaluate your models! Was the evaluation method adequate for your new experimental setup? Do you want to assess other aspects of performance?
 # 6. Analyse the various models you assessed and try to decide on which is the best.
@@ -43,11 +43,11 @@
 #
 # You can write your own code and you can reuse code from the tutorial and its packages or from other sources. You may use coding assistants if you like, but use it mindfully as you take full responsibility for this kind of (semi-)automated coding. Also, keep a record of the kinds of things you delegate to any form of assistant, as you will be asked to disclose this in your blog post (not because we will pass a value judgement on it, but because it is a widespread and good practice to document such things).
 #
-# You may use jupyter notebooks or python files, it's up to you as we will not directly assess your code. But, once again, be organised, as we will ask you to share a reproducible version of your experiments along with your blog post (again, because this is how real research is publicised). 
+# You may use jupyter notebooks or python files, it's up to you as we will not directly assess your code. But, once again, be organised, as we will ask you to share a reproducible version of your experiments along with your blog post (again, because this is how real research is publicised).
 #
 # If you are unsure about anything, ask your TA! They are always happy to help you! Happy coding! :)
 
-# %% [markdown]
+# %% [markdown] jp-MarkdownHeadingCollapsed=true
 # ## Checklist
 
 # %% [markdown]
@@ -85,23 +85,25 @@ DATASETS = ["snli", "mnli", "anli"]
 
 # %% [markdown]
 # ## 1. Data and metrics
-#
+
+# %% [markdown]
 # Label distribution per split, length statistics, hypothesis-only cue words (Gururangan et al. 2018).
 # Metrics: accuracy (primary), macro-F1. Folds: stratified k=5, data seed 0, shared by every experiment on a dataset.
 
 # %%
-toy = data.load_dataset("toy")
+toy = data.load_toy()
 eda.label_distribution(toy)
 
 # %%
-# snli = data.load_dataset("snli")
+# snli = data.load_snli()
 # eda.label_distribution(snli)
 # eda.length_stats(snli["train"], tokenizer)      # TODO: stub
 # eda.hypothesis_cue_words(snli["train"], tokenizer)   # TODO: stub
 
 # %% [markdown]
 # ## 2. Features
-#
+
+# %% [markdown]
 # Tokenizers: `wordlevel` (baseline), `bpe` (Neel). Representations: `indicator`, `bow` (Emil), `ngram` (Neel),
 # `lengths` (length-artifact baseline). Pairing: `concat` (default), `joint`, `hypothesis_only`.
 
@@ -121,7 +123,8 @@ smoke
 
 # %% [markdown]
 # ## 3. Architectures
-#
+
+# %% [markdown]
 # Models: `majority` (floor), `loglinear` (Neel), `mlp` (Emil), plus a third of our choice.
 # Hyperparameter search is a grid of experiments, selected by mean CV score.
 
@@ -132,7 +135,8 @@ smoke
 
 # %% [markdown]
 # ## 4. Results
-#
+
+# %% [markdown]
 # Per-fold score distributions, ROPE comparisons between the top candidates (within and across datasets),
 # ensembles of fold models on the dev set.
 
@@ -147,7 +151,8 @@ plotting.plot_scores(table, metric="accuracy")
 
 # %% [markdown]
 # ## 5. Extra
-#
+
+# %% [markdown]
 # Matched vs mismatched gap on MNLI, hard-subset scores, error analysis by genre/round, the logic-based question.
 
 # %%

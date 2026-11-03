@@ -1,5 +1,4 @@
 """Exploratory data analysis (core: DataFrame in, DataFrame out; plotting lives in ``plotting``)."""
-from __future__ import annotations
 
 import pandas as pd
 

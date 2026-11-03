@@ -1,6 +1,5 @@
 """Token-count-per-side baseline. Exists so the pipeline runs end to end before the real
 Representations land, and doubles as the length-artifact baseline (Gururangan et al. 2018)."""
-from __future__ import annotations
 
 import numpy as np
 import scipy.sparse as sp

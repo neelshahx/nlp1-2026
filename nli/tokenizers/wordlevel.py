@@ -1,11 +1,10 @@
 """Word-level baseline tokenizer: lowercase, split on words and punctuation."""
-from __future__ import annotations
 
 import json
 import re
 from collections import Counter
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from .base import Tokenizer
 
@@ -43,8 +42,9 @@ class WordLevelTokenizer(Tokenizer):
         return self._vocab
 
     def save(self, path: Path) -> None:
-        Path(str(path) + ".json").write_text(json.dumps({
-            "min_frequency": self.min_frequency, "lowercase": self.lowercase, "vocab": self._vocab}))
+        Path(str(path) + ".json").write_text(
+            json.dumps({"min_frequency": self.min_frequency, "lowercase": self.lowercase, "vocab": self._vocab})
+        )
 
     @classmethod
     def load(cls, path: Path) -> "WordLevelTokenizer":

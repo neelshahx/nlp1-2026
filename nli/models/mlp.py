@@ -11,7 +11,6 @@ Hyperparameters: ``hidden_dim``, ``dropout``, ``batch_size``, ``learning_rate``,
 ``weight_decay``, ``num_epochs``, ``validation_fraction``, ``patience``. Record the per-epoch
 train/val curve on ``self.history`` so ``plotting.plot_learning_curve`` can draw it.
 """
-from __future__ import annotations
 
 from pathlib import Path
 

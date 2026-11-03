@@ -6,10 +6,9 @@ has ``save``/``from_file``; wrap them. Hyperparameters to expose: ``vocab_size``
 ``min_frequency``, and the pre-tokenizer choice (see the HF tokenizer summary linked in
 the project notes for alternatives such as WordPiece).
 """
-from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from .base import Tokenizer
 

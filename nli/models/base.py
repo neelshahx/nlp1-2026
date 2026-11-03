@@ -1,5 +1,4 @@
 """Model interface: sklearn-shaped, as in cs224u's ``TorchModelBase``."""
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path

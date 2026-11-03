@@ -1,5 +1,4 @@
 """Predicts the training label distribution for every Pair. The floor every real Model must beat."""
-from __future__ import annotations
 
 import json
 from pathlib import Path

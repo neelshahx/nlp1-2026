@@ -1,5 +1,4 @@
 """Cross-validation folds (core)."""
-from __future__ import annotations
 
 import numpy as np
 from sklearn.model_selection import StratifiedKFold

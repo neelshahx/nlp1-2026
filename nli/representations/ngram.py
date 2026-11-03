@@ -5,7 +5,6 @@
 that returns token n-grams from ``self.tokenizer.tokenize`` is the shortest route and
 gives ``min_df``, ``binary`` and ``max_features`` for free. Consider a ``tfidf`` flag.
 """
-from __future__ import annotations
 
 import scipy.sparse as sp
 
@@ -15,8 +14,15 @@ from .base import VectorRepresentation
 class NgramRepresentation(VectorRepresentation):
     kind = "ngram"
 
-    def __init__(self, tokenizer, pairing: str = "concat", n: int = 2, min_df: int = 1,
-                 binary: bool = False, max_features: int | None = None):
+    def __init__(
+        self,
+        tokenizer,
+        pairing: str = "concat",
+        n: int = 2,
+        min_df: int = 1,
+        binary: bool = False,
+        max_features: int | None = None,
+    ):
         super().__init__(tokenizer, pairing)
         self.n = n
         self.min_df = min_df

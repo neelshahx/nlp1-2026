@@ -5,7 +5,6 @@ with ``solver="saga"``, pickled). KNOWN ISSUES there: no ``random_state`` (saga 
 stochastic); it re-encodes texts on every call. Here ``features.payload`` is already a CSR
 matrix. Pass ``random_state=self.seed``. Hyperparameters: ``C``, ``penalty``, ``max_iter``.
 """
-from __future__ import annotations
 
 from pathlib import Path
 
