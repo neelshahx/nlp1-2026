@@ -20,6 +20,7 @@
 # %%
 from nli import data
 from nli import tokenizers 
+tokenizers.TOKENIZERS
 
 # %%
 toy_data = data.load_toy()
@@ -40,7 +41,3 @@ assert before == after
 tok = tokenizers.build_tokenizer({'kind': 'bpe', 'min_frequency':2, 'vocab_size': 20})
 tok.train(toy_data['train']['premise'])
 tok.tokenize_many(toy_data['train']['premise'])
-
-# %%
-
-# %%

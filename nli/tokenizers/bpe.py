@@ -43,6 +43,7 @@ class BPETokenizer(Tokenizer):
         return self._tok.get_vocab()
 
     def save(self, path: Path) -> None:
+        assert self._tok is not None, "train the tokenizer first"
         self._tok.save(str(Path(str(path) + "_hf_bpe.json")))
         Path(str(path) + ".json").write_text(
             json.dumps(
