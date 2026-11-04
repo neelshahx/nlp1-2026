@@ -1,14 +1,11 @@
-"""BPE tokenizer via HuggingFace ``tokenizers``. OWNER: Neel.
+"""BPE tokenizer via HuggingFace ``tokenizers``"""
 
-Starting point: ``nlp1-student/part1/experiment.py:32`` ``train_tokenizer`` (BPE model,
-``BpeTrainer``, ``Metaspace`` pre-tokenizer, ``[UNK]``). ``tokenizers.Tokenizer`` already
-has ``save``/``from_file``; wrap them. Hyperparameters to expose: ``vocab_size``,
-``min_frequency``, and the pre-tokenizer choice (see the HF tokenizer summary linked in
-the project notes for alternatives such as WordPiece).
-"""
-
+import json
 from collections.abc import Iterable
 from pathlib import Path
+
+from tokenizers import Tokenizer as hf_Tokenizer
+from tokenizers import decoders, models, normalizers, pre_tokenizers, trainers
 
 from .base import Tokenizer
 
@@ -22,18 +19,43 @@ class BPETokenizer(Tokenizer):
         self._tok = None  # tokenizers.Tokenizer once trained
 
     def train(self, texts: Iterable[str]) -> "BPETokenizer":
-        raise NotImplementedError("Neel: train a tokenizers.Tokenizer(BPE) from texts")
+        tok = hf_Tokenizer(models.BPE(unk_token="[UNK]", end_of_word_suffix="</w>"))
+        tok.normalizer = normalizers.Sequence([normalizers.NFD(), normalizers.Lowercase(), normalizers.StripAccents()])
+        tok.pre_tokenizer = pre_tokenizers.Whitespace()
+        tok.decoder = decoders.BPEDecoder(suffix="</w>")
+        trainer = trainers.BpeTrainer(
+            vocab_size=self.vocab_size,
+            min_frequency=self.min_frequency,
+            special_tokens=["[PAD]", "[UNK]"],
+            end_of_word_suffix="</w>",
+        )
+        tok.train_from_iterator(texts, trainer=trainer)
+        self._tok = tok
+        return self
 
     def tokenize(self, text: str) -> list[str]:
-        raise NotImplementedError("Neel: return self._tok.encode(text).tokens")
+        assert self._tok is not None, "train the tokenizer first"
+        return self._tok.encode(text).tokens
 
     @property
     def vocab(self) -> dict[str, int]:
-        raise NotImplementedError("Neel: return self._tok.get_vocab()")
+        assert self._tok is not None, "train the tokenizer first"
+        return self._tok.get_vocab()
 
     def save(self, path: Path) -> None:
-        raise NotImplementedError("Neel: self._tok.save(str(path) + '.json')")
+        self._tok.save(str(Path(str(path) + "_hf_bpe.json")))
+        Path(str(path) + ".json").write_text(
+            json.dumps(
+                {
+                    "vocab_size": self.vocab_size,
+                    "min_frequency": self.min_frequency,
+                }
+            )
+        )
 
     @classmethod
     def load(cls, path: Path) -> "BPETokenizer":
-        raise NotImplementedError("Neel: tokenizers.Tokenizer.from_file(...)")
+        params = json.loads(Path(str(path) + ".json").read_text())
+        tok = cls(params["vocab_size"], params["min_frequency"])
+        tok._tok = hf_Tokenizer.from_file(str(Path(str(path) + "_hf_bpe.json")))
+        return tok

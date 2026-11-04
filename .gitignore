@@ -5,3 +5,4 @@
 .pytest_cache/
 models/
 *.ipynb
+.idea/

@@ -11,6 +11,7 @@ COLUMNS = ["id", "premise", "hypothesis", "label"]
 
 
 def load_anli(rounds: tuple[int, ...] = (1, 2, 3)) -> dict[str, pd.DataFrame]:
+    """Adversarial NLI: humans wrote hypotheses to fool models, over 3 rounds; 162,865 / 3,200 / 3,200 (all rounds)."""
     ds = hf_load("facebook/anli")
     out: dict[str, pd.DataFrame] = {}
     for split in ("train", "dev", "test"):
@@ -25,6 +26,7 @@ def load_anli(rounds: tuple[int, ...] = (1, 2, 3)) -> dict[str, pd.DataFrame]:
 
 
 def load_mnli() -> dict[str, pd.DataFrame]:
+    """Multi-genre NLI: train/dev share 5 genres, test is 5 unseen genres; 392,702 / 9,815 / 9,832."""
     ds = hf_load("nyu-mll/multi_nli")
 
     def frame(hf_split: str, split: str) -> pd.DataFrame:
@@ -40,6 +42,7 @@ def load_mnli() -> dict[str, pd.DataFrame]:
 
 
 def load_snli() -> dict[str, pd.DataFrame]:
+    """Stanford NLI: image-caption premises, crowd hypotheses; 549,367 / 9,842 / 9,824 (no-consensus pairs dropped)."""
     ds = hf_load("stanfordnlp/snli")
 
     def frame(hf_split: str, split: str) -> pd.DataFrame:
@@ -56,6 +59,7 @@ def load_snli() -> dict[str, pd.DataFrame]:
 
 
 def load_toy() -> dict[str, pd.DataFrame]:
+    """Synthetic templated pairs for smoke tests, balanced across labels; 36 / 9 / 9."""
     subjects = ["A man", "A woman", "A child", "Two kids", "An old man", "A girl"]
     actions = ["running", "swimming", "reading", "singing", "cooking", "dancing"]
     places = ["park", "pool", "library", "kitchen", "street", "garden"]

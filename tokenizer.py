@@ -1,16 +1,16 @@
 import re
 from collections import Counter
- 
+
 import numpy as np
 from scipy import sparse
- 
+
 TOKEN_RE = re.compile(r"[a-z0-9']+")
- 
- 
+
+
 def tokenize(text):
     return TOKEN_RE.findall(text.lower())
- 
- 
+
+
 class BowTokenizer:
     UNK = "<unk>"
  
@@ -48,7 +48,7 @@ class BowTokenizer:
             shape=(len(sentences), len(self.vocab)),
             dtype=np.float32,
         )
- 
- 
+
+
 def pair_features(u, v):
     return sparse.hstack([u, v, abs(u - v), u.multiply(v)]).tocsr()

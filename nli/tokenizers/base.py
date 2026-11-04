@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 class Tokenizer(ABC):
-    """Trained once per Dataset on the train split's premises and hypotheses (ADR-0001).
+    """Trained once per Dataset on the train split's premises and hypotheses.
 
     Implementations must be deterministic given their hyperparameters and training texts,
     because the cached file is keyed by the config hash, not by the trained vocabulary.

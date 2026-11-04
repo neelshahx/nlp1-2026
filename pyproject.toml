@@ -1,5 +1,5 @@
 [project]
-name = "nlp1-student"
+name = "nlp1-2026"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
@@ -25,6 +25,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.40.2",
+    "jupyterlab-lsp>=5.3.0",
     "pytest>=8",
     "ruff>=0.17.3",
 ]
@@ -46,3 +48,6 @@ known-first-party = ["nli"]
 
 [tool.ruff.lint.per-file-ignores]
 "project1.py" = ["F401", "B018"]  # imports for later cells; bare expressions display output
+
+[tool.basedpyright]
+typeCheckingMode = "standard"

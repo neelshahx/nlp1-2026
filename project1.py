@@ -25,7 +25,7 @@
 #
 # As the tutorials will be building upon your knowledge throughout the weeks, the task and dataset you choose now will be the ones you use in projects 2 and 3; and the ones you will be finally writing about in your final blog post.
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ## Get to work!
 
 # %% [markdown]
@@ -47,7 +47,7 @@
 #
 # If you are unsure about anything, ask your TA! They are always happy to help you! Happy coding! :)
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ## Checklist
 
 # %% [markdown]
@@ -95,10 +95,30 @@ toy = data.load_toy()
 eda.label_distribution(toy)
 
 # %%
-# snli = data.load_snli()
-# eda.label_distribution(snli)
-# eda.length_stats(snli["train"], tokenizer)      # TODO: stub
-# eda.hypothesis_cue_words(snli["train"], tokenizer)   # TODO: stub
+
+# %%
+from tokenizers import Tokenizer
+
+from tokenizers.models import BPE
+from tokenizers.normalizers import Lowercase
+from tokenizers.pre_tokenizers import Whitespace
+
+tokenizer = Tokenizer(BPE(unk_token="<unk>"))
+tokenizer.normalizer = Lowercase()
+tokenizer.pre_tokenizer = Whitespace()
+# tokenizer = Tokenizer.from_pretrained("bert-base-uncased")
+
+corpus = toy['train']['premise'] + ' ' + toy['train']['hypothesis']
+list(map(tokenizer.encode, corpus))
+
+# %%
+eda.length_stats(toy, tokenizer)
+
+# %%
+snli = data.load_snli()
+eda.label_distribution(snli)
+eda.length_stats(snli["train"], tokenizer)      # TODO: stub
+eda.hypothesis_cue_words(snli["train"], tokenizer)   # TODO: stub
 
 # %% [markdown]
 # ## 2. Features
