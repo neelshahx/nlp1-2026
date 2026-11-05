@@ -6,3 +6,5 @@
 models/
 *.ipynb
 .idea/
+results/*.txt
+.DS_Store
