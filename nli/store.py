@@ -39,6 +39,10 @@ class Result:
     def seeds(self) -> list[int]:
         return list(self.config["model_seeds"])
 
+    @property
+    def k(self) -> int:
+        return self.config["dataset"]["k"]
+
     def per_fold(self, metric: str) -> np.ndarray:
         """Scores ordered by (seed, fold): the layout ``baycomp`` expects with ``runs=len(seeds)``."""
         df = self.scores[self.scores["metric"] == metric].sort_values(["seed", "fold"])
@@ -166,3 +170,13 @@ def load_results(root: Path = ".") -> pd.DataFrame:
 
 def read_predictions(root: Path, id: str, seed: int, fold: int, split: str) -> pd.DataFrame:
     return pd.read_csv(results_dir(root, id) / "predictions" / f"seed-{seed}-fold-{fold}-{split}.csv")
+
+
+def read_fold_predictions(root: Path, result: Result, split: str, seed: int = 0) -> list[pd.DataFrame]:
+    """One predictions frame per fold of ``result``, in fold order."""
+    return [read_predictions(root, result.id, seed, fold, split) for fold in range(result.k)]
+
+
+def predicted_labels(predictions: pd.DataFrame) -> np.ndarray:
+    """Most probable label per row of a predictions frame (pure)."""
+    return predictions[PROB_COLUMNS].to_numpy().argmax(axis=1)

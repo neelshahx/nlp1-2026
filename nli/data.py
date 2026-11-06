@@ -10,6 +10,16 @@ LABELS = ["entailment", "neutral", "contradiction"]
 COLUMNS = ["id", "premise", "hypothesis", "label"]
 
 
+def texts(pairs: pd.DataFrame) -> list[str]:
+    """Every premise followed by every hypothesis: what tokenizers train on."""
+    return list(pairs["premise"]) + list(pairs["hypothesis"])
+
+
+def label_names(pairs: pd.DataFrame) -> pd.Series:
+    """The ``label`` column as names from ``LABELS`` instead of integers."""
+    return pairs["label"].map(lambda i: LABELS[i])
+
+
 def load_anli(rounds: tuple[int, ...] = (1, 2, 3)) -> dict[str, pd.DataFrame]:
     """Adversarial NLI: humans wrote hypotheses to fool models, over 3 rounds; 162,865 / 3,200 / 3,200 (all rounds)."""
     ds = hf_load("facebook/anli")

@@ -6,10 +6,9 @@ from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
 
-from .base import Tokenizer
+from .base import UNK, Tokenizer
 
 _TOKEN = re.compile(r"\w+|[^\w\s]")
-UNK = "[UNK]"
 
 
 class WordLevelTokenizer(Tokenizer):

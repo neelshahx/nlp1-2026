@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from pathlib import Path
 
+UNK = "[UNK]"  # what every Tokenizer emits for a token outside its vocabulary
+
 
 class Tokenizer(ABC):
     """Trained once per Dataset on the train split's premises and hypotheses.

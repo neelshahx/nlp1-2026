@@ -1,4 +1,4 @@
-from .base import Tokenizer
+from .base import UNK, Tokenizer
 from .bpe import BPETokenizer
 from .wordlevel import WordLevelTokenizer
 
@@ -14,4 +14,4 @@ def build_tokenizer(config: dict) -> Tokenizer:
     return TOKENIZERS[config["kind"]](**kwargs)
 
 
-__all__ = ["Tokenizer", "TOKENIZERS", "build_tokenizer"]
+__all__ = ["Tokenizer", "TOKENIZERS", "UNK", "build_tokenizer"]

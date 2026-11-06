@@ -7,7 +7,7 @@ from pathlib import Path
 from tokenizers import Tokenizer as hf_Tokenizer
 from tokenizers import decoders, models, normalizers, pre_tokenizers, trainers
 
-from .base import Tokenizer
+from .base import UNK, Tokenizer
 
 
 class BPETokenizer(Tokenizer):
@@ -19,14 +19,14 @@ class BPETokenizer(Tokenizer):
         self._tok = None  # tokenizers.Tokenizer once trained
 
     def train(self, texts: Iterable[str]) -> "BPETokenizer":
-        tok = hf_Tokenizer(models.BPE(unk_token="[UNK]", end_of_word_suffix="</w>"))
+        tok = hf_Tokenizer(models.BPE(unk_token=UNK, end_of_word_suffix="</w>"))
         tok.normalizer = normalizers.Sequence([normalizers.NFD(), normalizers.Lowercase(), normalizers.StripAccents()])
         tok.pre_tokenizer = pre_tokenizers.Whitespace()
         tok.decoder = decoders.BPEDecoder(suffix="</w>")
         trainer = trainers.BpeTrainer(
             vocab_size=self.vocab_size,
             min_frequency=self.min_frequency,
-            special_tokens=["[PAD]", "[UNK]"],
+            special_tokens=["[PAD]", UNK],
             end_of_word_suffix="</w>",
         )
         tok.train_from_iterator(texts, trainer=trainer)

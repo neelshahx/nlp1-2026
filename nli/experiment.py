@@ -10,7 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from .data import load_anli, load_mnli, load_snli, load_toy
+from .data import load_anli, load_mnli, load_snli, load_toy, texts
 from .folds import make_folds
 from .metrics import METRICS, score
 from .models import MODELS, build_model
@@ -114,8 +114,7 @@ def get_or_train_tokenizer(cfg: dict, train, root: Path) -> Tokenizer:
     cached = list(path.parent.glob(path.name + ".*"))
     if cached:
         return type(tokenizer).load(path)
-    texts = list(train["premise"]) + list(train["hypothesis"])
-    tokenizer.train(texts)
+    tokenizer.train(texts(train))
     path.parent.mkdir(parents=True, exist_ok=True)
     tokenizer.save(path)
     return tokenizer
