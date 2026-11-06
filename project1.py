@@ -77,8 +77,8 @@ import pandas as pd
 
 from nli import data, eda, plotting
 from nli.compare import compare
-from nli.ensemble import ensemble_on_dev
-from nli.experiment import grid, run_experiment
+from nli.ensemble import ensemble_on_dev, ensemble_on_split
+from nli.experiment import grid, predict_split, run_experiment
 from nli.models import MLPModel
 from nli.store import load_results, model_path, read_fold_predictions
 from nli.tokenizers import build_tokenizer
@@ -115,7 +115,7 @@ eda.vocabulary_overlap(snli["train"], tokenizer).groupby("label")[["overlap", "j
 
 # %%
 # the Gururangan et al. 2018 artifact table (negation -> contradiction, ...)
-eda.hypothesis_cue_words(snli["train"], tokenizer)
+eda.hypothesis_cue_words(snli["train"], tokenizer).tail(10)
 
 # %%
 # OOV on dev vs. vocabulary size, per tokenizer kind
@@ -191,6 +191,12 @@ plotting.plot_learning_curve(MLPModel.load(model_path(".", mlp.id, seed=0, fold=
 # compare(a, b, metric="accuracy", rope=0.01, plot=True)
 # ensemble_on_dev(a, "mean_proba")
 
+# %%
+# Headline number: the selected experiment's fold models, ensembled on the test set. Run once, after selection.
+# best = full
+# predict_split(best, "test")
+# ensemble_on_split(best, "test", "mean_proba")
+
 # %% [markdown]
 # ## 5. Extra
 
@@ -198,3 +204,15 @@ plotting.plot_learning_curve(MLPModel.load(model_path(".", mlp.id, seed=0, fold=
 # Hard-subset scores, error analysis, the logic-based question.
 
 # %%
+from nli.eda import hard_subset
+from nli.store import read_predictions, predicted_labels
+pd.set_option('display.max_colwidth',1000)
+
+# %%
+preds = read_predictions(root=".", id=hyp.id, seed=0, fold=0, split="dev")
+hard = hard_subset(preds)
+hard_ids = hard[hard].index
+preds['pred'] =predicted_labels(preds)
+dev = snli["dev"].set_index("id")
+examples = dev.loc[hard_ids].join(preds.set_index("id")[["pred", "p_entailment", "p_neutral", "p_contradiction"]])
+examples.head(1).T

@@ -43,5 +43,27 @@
       "model_seeds": [0, 1]
     },
     "overrides": {"model.hidden_dim": [128, 512], "model.n_blocks": [0, 2]}
+  },
+  "wordlevel": {
+    "note": "Word-level tokenizer baseline for the tokenizer slide, on the best log-linear config.",
+    "base": {
+      "name": "snli-wordlevel-bow-loglin",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "wordlevel", "min_frequency": 2},
+      "representation": {"kind": "bow", "binary": true},
+      "model": {"kind": "loglinear", "C": 0.1}
+    },
+    "overrides": {}
+  },
+  "joint": {
+    "note": "Joint pairing (one bag over both sides) for the representation slide, on the best log-linear config.",
+    "base": {
+      "name": "snli-bow-loglin",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "bpe", "vocab_size": 8000},
+      "representation": {"kind": "bow", "binary": true},
+      "model": {"kind": "loglinear", "C": 0.1}
+    },
+    "overrides": {"representation.pairing": ["joint"]}
   }
 }
