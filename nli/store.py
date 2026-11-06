@@ -11,6 +11,7 @@ Layout, relative to ``root`` (the repo by default)::
 """
 
 import json
+import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -97,6 +98,17 @@ def write_predictions(
     df.insert(0, "label", labels)
     df.insert(0, "id", ids.to_numpy())
     df.to_csv(d / f"seed-{seed}-fold-{fold}-{split}.csv", index=False)
+
+
+def delete_result(root: Path, id: str) -> None:
+    """Remove an Experiment's results, models and index row, so ``run_experiment`` will run it again."""
+    for d in (results_dir(root, id), models_dir(root, id)):
+        if d.exists():
+            shutil.rmtree(d)
+    path = Path(root) / "results" / "index.csv"
+    if path.exists():
+        index = pd.read_csv(path)
+        index[index["id"] != id].to_csv(path, index=False)
 
 
 def _append_index(root: Path, result: Result) -> None:

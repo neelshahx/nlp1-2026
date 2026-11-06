@@ -3,7 +3,8 @@
 *.pyc
 .ipynb_checkpoints/
 .pytest_cache/
-models/
+models/*
+!models/README.md
 *.ipynb
 .idea/
 results/*.txt

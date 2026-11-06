@@ -8,6 +8,7 @@ uv run pytest
 uv run ruff check --fix .
 uv run ruff format .
 uv run basedpyright nli/
+uv run python scripts/run_grid.py grids/snli.json --dry-run
 ```
 
 Within jupyter lab right-click on .py file to open as jupyter notebook

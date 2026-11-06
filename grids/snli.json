@@ -1,0 +1,47 @@
+{
+  "loglinear": {
+    "note": "Regularisation strength and counts vs presence for the bag-of-words log-linear baseline.",
+    "base": {
+      "name": "snli-bow-loglin",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "bpe", "vocab_size": 8000},
+      "representation": {"kind": "bow"},
+      "model": {"kind": "loglinear"}
+    },
+    "overrides": {"model.C": [0.1, 1.0, 10.0], "representation.binary": [false, true]}
+  },
+  "tokenizer": {
+    "note": "BPE vocabulary size around the 8000 default, on the baseline model.",
+    "base": {
+      "name": "snli-bow-loglin",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "bpe"},
+      "representation": {"kind": "bow"},
+      "model": {"kind": "loglinear"}
+    },
+    "overrides": {"tokenizer.vocab_size": [4000, 16000]}
+  },
+  "ngram": {
+    "note": "Unigrams vs bigrams as the third representation; min_df=2 keeps the bigram vocabulary bounded.",
+    "base": {
+      "name": "snli-ngram-loglin",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "bpe", "vocab_size": 8000},
+      "representation": {"kind": "ngram", "min_df": 2},
+      "model": {"kind": "loglinear"}
+    },
+    "overrides": {"representation.n": [1, 2]}
+  },
+  "mlp": {
+    "note": "Width and depth: n_blocks=0 is the single-hidden-layer MLP, n_blocks=2 the residual variant. Two seeds.",
+    "base": {
+      "name": "snli-bow-mlp",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "bpe", "vocab_size": 8000},
+      "representation": {"kind": "bow"},
+      "model": {"kind": "mlp", "num_epochs": 10},
+      "model_seeds": [0, 1]
+    },
+    "overrides": {"model.hidden_dim": [128, 512], "model.n_blocks": [0, 2]}
+  }
+}

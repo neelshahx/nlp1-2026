@@ -3,9 +3,9 @@ import pandas as pd
 import pytest
 
 from nli.compare import compare
-from nli.ensemble import combine, ensemble_on_dev
-from nli.experiment import EXAMPLE_CONFIG, experiment_id, grid, run_experiment, validate_config
-from nli.store import Result, load_results
+from nli.ensemble import combine, ensemble_on_dev, ensemble_on_split
+from nli.experiment import EXAMPLE_CONFIG, experiment_id, grid, predict_split, run_experiment, validate_config
+from nli.store import Result, load_results, read_fold_predictions
 
 
 def test_experiment_runs_end_to_end(tmp_path):
@@ -25,6 +25,24 @@ def test_experiment_runs_end_to_end(tmp_path):
 
     again = run_experiment(EXAMPLE_CONFIG, root=tmp_path, verbose=False)
     assert again.id == result.id and again.scores.equals(result.scores)
+
+
+def test_predict_split_stores_test_predictions_for_every_fold_model(tmp_path):
+    result = run_experiment(EXAMPLE_CONFIG, root=tmp_path, verbose=False)
+    frames = predict_split(result, "test", root=tmp_path)
+    assert len(frames) == 3
+    assert all(len(df) == 9 for df in frames)
+    assert (tmp_path / "results" / result.id / "predictions" / "seed-0-fold-2-test.csv").exists()
+    stored = read_fold_predictions(tmp_path, result, "test")
+    assert stored[1].equals(frames[1])
+    with pytest.raises(FileExistsError):
+        predict_split(result, "test", root=tmp_path)
+    assert len(predict_split(result, "test", root=tmp_path, force=True)) == 3
+
+    test_scores = ensemble_on_split(result, "test", "majority", root=tmp_path)
+    assert set(test_scores) == {"accuracy", "macro_f1"}
+    assert 0 <= test_scores["accuracy"] <= 1
+    assert ensemble_on_split(result, "dev", root=tmp_path) == ensemble_on_dev(result, root=tmp_path)
 
 
 def test_experiment_id_is_stable_and_config_sensitive():

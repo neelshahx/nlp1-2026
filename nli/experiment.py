@@ -10,6 +10,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import pandas as pd
+
 from .data import load_anli, load_mnli, load_snli, load_toy, texts
 from .folds import make_folds
 from .metrics import METRICS, score
@@ -21,6 +23,8 @@ from .store import (
     load_result,
     model_path,
     models_dir,
+    read_predictions,
+    results_dir,
     tokenizers_dir,
     write_predictions,
     write_result,
@@ -40,6 +44,12 @@ EXAMPLE_CONFIG = {
 DATASETS = {"anli": load_anli, "mnli": load_mnli, "snli": load_snli, "toy": load_toy}
 
 _DATASET_DEFAULTS = {"k": 5, "data_seed": 0, "rounds": None}
+
+
+def load_dataset(cfg: dict) -> dict[str, pd.DataFrame]:
+    """The splits named by a normalised config's ``dataset`` block."""
+    name, rounds = cfg["dataset"]["name"], cfg["dataset"]["rounds"]
+    return load_anli(tuple(rounds)) if name == "anli" and rounds else DATASETS[name]()
 
 
 def validate_config(config: dict) -> dict:
@@ -135,8 +145,7 @@ def run_experiment(config: dict, root: Path | str = ".", force: bool = False, ve
             print(f"[{eid}] already run; loading")
         return load_result(root, eid)
 
-    name, rounds = cfg["dataset"]["name"], cfg["dataset"]["rounds"]
-    data = load_anli(tuple(rounds)) if name == "anli" and rounds else DATASETS[name]()
+    data = load_dataset(cfg)
     train, dev = data["train"], data["dev"]
     y = train["label"].to_numpy()
     tokenizer = get_or_train_tokenizer(cfg, train, root)
@@ -162,8 +171,37 @@ def run_experiment(config: dict, root: Path | str = ".", force: bool = False, ve
                     f"[{eid}] seed {seed} fold {fold_i}: " + ", ".join(f"{m}={v:.4f}" for m, v in fold_scores.items())
                 )
 
-    import pandas as pd
-
     result = Result(eid, cfg, pd.DataFrame(rows))
     write_result(root, result)
     return result
+
+
+def predict_split(result: Result, split: str, root: Path | str = ".", force: bool = False) -> list[pd.DataFrame]:
+    """Score every stored Fold model of ``result`` on a split and save the predictions.
+
+    Reloads each model and refits its Representation on the fold's training Pairs, exactly as
+    ``run_experiment`` did. Returns one predictions frame per (seed, fold), in that order. Meant for the
+    test set, once, after model selection on dev; dev predictions are already stored. Refuses to overwrite
+    stored predictions for the split unless ``force``.
+    """
+    root = Path(root)
+    cfg = result.config
+    first = results_dir(root, result.id) / "predictions" / f"seed-{cfg['model_seeds'][0]}-fold-0-{split}.csv"
+    if first.exists() and not force:
+        raise FileExistsError(f"{split} predictions already stored for {result.id}; pass force=True to redo them")
+    data = load_dataset(cfg)
+    train, target = data["train"], data[split]
+    tokenizer = get_or_train_tokenizer(cfg, train, root)
+    folds = make_folds(train["label"].to_numpy(), cfg["dataset"]["k"], cfg["dataset"]["data_seed"])
+    model_cls = MODELS[cfg["model"]["kind"]]
+
+    frames = []
+    for seed in cfg["model_seeds"]:
+        for fold_i, (tr, _) in enumerate(folds):
+            rep = build_representation(cfg["representation"], tokenizer).fit(train.iloc[tr])
+            model = model_cls.load(model_path(root, result.id, seed, fold_i))
+            probs = model.predict_proba(rep.transform(target))
+            labels = target["label"].to_numpy()
+            write_predictions(root, result.id, seed, fold_i, split, target["id"], labels, probs)
+            frames.append(read_predictions(root, result.id, seed, fold_i, split))
+    return frames
