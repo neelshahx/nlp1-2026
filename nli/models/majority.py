@@ -1,4 +1,4 @@
-"""Predicts the training label distribution for every Pair. The floor every real Model must beat."""
+"""Baseline that ignores the input and predicts the training label distribution for every pair."""
 
 import json
 from pathlib import Path
@@ -18,11 +18,13 @@ class MajorityModel(Model):
         self._dist: np.ndarray | None = None
 
     def fit(self, features: Features, labels: np.ndarray) -> "MajorityModel":
+        """Record how often each label occurs; ``features`` are unused."""
         counts = np.bincount(labels, minlength=len(LABELS)).astype(float)
         self._dist = counts / counts.sum()
         return self
 
     def predict_proba(self, features: Features) -> np.ndarray:
+        """The same label distribution for every row."""
         return np.tile(self._dist, (len(features), 1))
 
     def save(self, path: Path) -> None:
