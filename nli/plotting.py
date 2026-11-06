@@ -60,7 +60,7 @@ def plot_lengths(lengths: pd.DataFrame, unit: str = "tokens") -> plt.Figure:
 
 
 def plot_vocab_coverage(coverage: pd.DataFrame) -> plt.Figure:
-    """OOV rate vs. vocabulary size, one line per tokenizer kind; columns kind, vocab_size, oov_rate."""
+    """Out-of-vocabulary (OOV) rate vs. vocabulary size, one line per tokenizer kind; columns kind, vocab_size, oov_rate."""
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.lineplot(data=coverage, x="vocab_size", y="oov_rate", hue="kind", marker="o", ax=ax)
     ax.set_xscale("log")

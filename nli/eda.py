@@ -69,10 +69,11 @@ def vocabulary_overlap(pairs: pd.DataFrame, tokenizer: Tokenizer) -> pd.DataFram
 def hypothesis_cue_words(
     pairs: pd.DataFrame, tokenizer: Tokenizer, top_n: int = 20, min_count: int = 20
 ) -> pd.DataFrame:
-    """Top ``top_n`` hypothesis tokens per Label by PMI, counting a token once per hypothesis.
+    """Top ``top_n`` hypothesis tokens per Label by pointwise mutual info (PMI), counting a token once per hypothesis.
 
-    ``pmi = log p(token | label) / p(token)``; tokens seen in fewer than ``min_count`` hypotheses of a
-    label are dropped. Columns: label, token, count, pmi.
+    ``pmi = log p(token | label) / p(token)``: 0 means the token appears under that label at its overall
+    rate, > 0 overrepresented (a cue for the label), < 0 underrepresented. Tokens seen in fewer than
+    ``min_count`` hypotheses of a label are dropped. Columns: label, token, count, pmi.
     """
     rows = [
         {"label": label, "token": token}
@@ -107,7 +108,7 @@ def breakdown(pairs: pd.DataFrame, column: str) -> pd.DataFrame:
 
 
 def oov_rate(pairs: pd.DataFrame, tokenizer: Tokenizer) -> float:
-    """Share of tokens across both sides that the tokenizer maps to its unknown token."""
+    """Out-of-vocabulary (OOV) rate: share of tokens across both sides the tokenizer maps to its unknown token."""
     tokens = [t for side in SIDES for toks in tokenizer.tokenize_many(pairs[side]) for t in toks]
     return sum(t == UNK for t in tokens) / len(tokens) if tokens else 0.0
 

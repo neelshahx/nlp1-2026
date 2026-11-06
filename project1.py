@@ -76,46 +76,46 @@
 import pandas as pd
 
 from nli import data, eda, plotting
-from nli.compare import compare, compare_across_datasets
+from nli.compare import compare
 from nli.ensemble import ensemble_on_dev
-from nli.experiment import EXAMPLE_CONFIG, grid, run_experiment
-from nli.store import load_results, read_fold_predictions
+from nli.experiment import grid, run_experiment
+from nli.models import MLPModel
+from nli.store import load_results, model_path, read_fold_predictions
 from nli.tokenizers import build_tokenizer
 
-DATASETS = ["snli", "mnli", "anli"]
+BASE = {
+    "name": "snli-bow-loglin",
+    "dataset": {"name": "snli", "k": 5},
+    "tokenizer": {"kind": "bpe", "vocab_size": 8000},
+    "representation": {"kind": "bow"},
+    "model": {"kind": "loglinear"},
+}
 
 # %% [markdown]
 # ## 1. Data and metrics
 
 # %% [markdown]
 # Label distribution per split, length statistics, hypothesis-only cue words (Gururangan et al. 2018).
-# Metrics: accuracy (primary), macro-F1. Folds: stratified k=5, data seed 0, shared by every experiment on a dataset.
+# Metrics: accuracy (primary), macro-F1. Folds: stratified k=5, data seed 0, shared by every experiment.
 
 # %%
-toy = data.load_toy()
-eda.label_distribution(toy)
-
-# %%
-tokenizer = build_tokenizer({"kind": "wordlevel", "min_frequency": 2}).train(data.texts(toy["train"]))
-
-# %%
-plotting.plot_label_distribution(eda.label_distribution(toy))
-eda.length_stats(toy["train"], tokenizer)
-
-# %%
-plotting.plot_lengths(eda.lengths(toy["train"], tokenizer))
-eda.vocabulary_overlap(toy["train"], tokenizer).groupby("label")[["overlap", "jaccard"]].mean()
-
-# %%
-eda.hypothesis_cue_words(toy["train"], tokenizer, top_n=5, min_count=4)
-
-# %%
-# SNLI: the Gururangan et al. 2018 artifact table (negation -> contradiction, ...)
 snli = data.load_snli()
 eda.label_distribution(snli)
-snli_tokenizer = build_tokenizer({"kind": "wordlevel", "min_frequency": 2}).train(data.texts(snli["train"]))
-eda.length_stats(snli["train"], snli_tokenizer)
-eda.hypothesis_cue_words(snli["train"], snli_tokenizer)
+
+# %%
+tokenizer = build_tokenizer({"kind": "wordlevel", "min_frequency": 2}).train(data.texts(snli["train"]))
+
+# %%
+plotting.plot_label_distribution(eda.label_distribution(snli))
+eda.length_stats(snli["train"], tokenizer)
+
+# %%
+plotting.plot_lengths(eda.lengths(snli["train"], tokenizer))
+eda.vocabulary_overlap(snli["train"], tokenizer).groupby("label")[["overlap", "jaccard"]].mean()
+
+# %%
+# the Gururangan et al. 2018 artifact table (negation -> contradiction, ...)
+eda.hypothesis_cue_words(snli["train"], tokenizer)
 
 # %%
 # OOV on dev vs. vocabulary size, per tokenizer kind
@@ -125,13 +125,10 @@ tokenizer_configs = [{"kind": "wordlevel", "min_frequency": n} for n in (1, 2, 5
 coverage = []
 for cfg in tokenizer_configs:
     trained = build_tokenizer(cfg).train(data.texts(snli["train"]))
-    coverage.append({"kind": cfg["kind"], "vocab_size": len(trained.vocab), "oov_rate": eda.oov_rate(snli["dev"], trained)})
+    coverage.append(
+        {"kind": cfg["kind"], "vocab_size": len(trained.vocab), "oov_rate": eda.oov_rate(snli["dev"], trained)}
+    )
 plotting.plot_vocab_coverage(pd.DataFrame(coverage))
-
-# %%
-# MNLI by genre, ANLI by round
-eda.breakdown(data.load_mnli()["train"], "genre")
-eda.breakdown(data.load_anli()["train"], "round")
 
 # %% [markdown]
 # ## 2. Features
@@ -141,36 +138,26 @@ eda.breakdown(data.load_anli()["train"], "round")
 # `ngram` (Neel), `lengths` (length-artifact baseline). Pairing: `concat` (default), `joint`, `hypothesis_only`.
 
 # %%
-smoke = run_experiment(EXAMPLE_CONFIG)
-smoke
+full = run_experiment(BASE)
+full
 
 # %%
-# Hypothesis-only baselines (Gururangan et al. 2018): well above chance on SNLI/MNLI, near chance on ANLI.
-# One concat + one hypothesis_only Result per dataset; compare each pair; score the concat model on the
-# hard subset (dev pairs the hypothesis-only model got wrong).
-hyp_only = {}
-for name in DATASETS:
-    base = {
-        **EXAMPLE_CONFIG,
-        "dataset": {"name": name, "k": 5},
-        "tokenizer": {"kind": "bpe", "vocab_size": 8000},
-        "representation": {"kind": "bow"},
-        "model": {"kind": "loglinear"},
-    }
-    full = run_experiment({**base, "name": f"{name}-bow-loglin"})
-    hyp = run_experiment(
-        {**base, "name": f"{name}-hyp-only-bow-loglin", "representation": {"kind": "bow", "pairing": "hypothesis_only"}}
-    )
-    hard = eda.hard_subset_scores(read_fold_predictions(".", full, "dev"), read_fold_predictions(".", hyp, "dev"))
-    posterior = compare(full, hyp)
-    hyp_only[name] = {
+# Hypothesis-only baseline (Gururangan et al. 2018): well above chance on SNLI. Compare against concat and
+# score the concat model on the hard subset (dev pairs the hypothesis-only model got wrong).
+hyp = run_experiment(
+    {**BASE, "name": "snli-hyp-only-bow-loglin", "representation": {"kind": "bow", "pairing": "hypothesis_only"}}
+)
+hard = eda.hard_subset_scores(read_fold_predictions(".", full, "dev"), read_fold_predictions(".", hyp, "dev"))
+posterior = compare(full, hyp)
+pd.Series(
+    {
         "concat": full.mean("accuracy"),
         "hypothesis_only": hyp.mean("accuracy"),
         "concat_on_hard": hard["accuracy"].mean(),
         "hard_share": hard["hard_share"].mean(),
         **{k: posterior[k] for k in ("p_left", "p_rope", "p_right")},
     }
-pd.DataFrame(hyp_only).T
+)
 
 # %% [markdown]
 # ## 3. Architectures
@@ -180,29 +167,24 @@ pd.DataFrame(hyp_only).T
 # Hyperparameter search is a grid of experiments, selected by mean CV score.
 
 # %%
-# base = {...}
-# configs = grid(base, {"model.C": [0.1, 1.0, 10.0], "representation.n": [1, 2]})
+# configs = grid(BASE, {"model.C": [0.1, 1.0, 10.0], "representation.n": [1, 2]})
 # results = [run_experiment(c) for c in configs]
 
 # %% [markdown]
 # ## 4. Results
 
 # %% [markdown]
-# Per-fold score distributions, ROPE comparisons between the top candidates (within and across datasets),
-# ensembles of fold models on the dev set.
+# Per-fold score distributions, ROPE comparisons between the top candidates, ensembles of fold models on the dev set.
 
 # %%
 table = load_results()
 plotting.plot_scores(table, metric="accuracy")
 
 # %%
-# confusion matrix of the smoke run's fold models, pooled over folds; learning curve of one MLP fold model
-plotting.plot_confusion(pd.concat(read_fold_predictions(".", smoke, "heldout")), title=smoke.id)
-from nli.models import MLPModel
-from nli.store import model_path
-
-mlp_smoke = run_experiment({**EXAMPLE_CONFIG, "name": "toy-lengths-mlp", "model": {"kind": "mlp", "num_epochs": 10}})
-plotting.plot_learning_curve(MLPModel.load(model_path(".", mlp_smoke.id, seed=0, fold=0)).history)
+# confusion matrix of the fold models, pooled over folds; learning curve of one MLP fold model
+plotting.plot_confusion(pd.concat(read_fold_predictions(".", full, "heldout")), title=full.id)
+mlp = run_experiment({**BASE, "name": "snli-bow-mlp", "model": {"kind": "mlp", "num_epochs": 10}})
+plotting.plot_learning_curve(MLPModel.load(model_path(".", mlp.id, seed=0, fold=0)).history)
 
 # %%
 # a, b = results[0], results[1]
@@ -213,6 +195,6 @@ plotting.plot_learning_curve(MLPModel.load(model_path(".", mlp_smoke.id, seed=0,
 # ## 5. Extra
 
 # %% [markdown]
-# Matched vs mismatched gap on MNLI, hard-subset scores, error analysis by genre/round, the logic-based question.
+# Hard-subset scores, error analysis, the logic-based question.
 
 # %%
