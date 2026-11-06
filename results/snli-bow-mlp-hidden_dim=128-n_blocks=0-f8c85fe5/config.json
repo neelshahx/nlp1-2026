@@ -1,0 +1,30 @@
+{
+  "name": "snli-bow-mlp-hidden_dim=128-n_blocks=0",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "bpe",
+    "vocab_size": 8000
+  },
+  "representation": {
+    "kind": "bow"
+  },
+  "model": {
+    "kind": "mlp",
+    "num_epochs": 10,
+    "hidden_dim": 128,
+    "n_blocks": 0
+  },
+  "model_seeds": [
+    0,
+    1
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}

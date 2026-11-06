@@ -216,3 +216,5 @@ preds['pred'] =predicted_labels(preds)
 dev = snli["dev"].set_index("id")
 examples = dev.loc[hard_ids].join(preds.set_index("id")[["pred", "p_entailment", "p_neutral", "p_contradiction"]])
 examples.head(1).T
+
+# %%

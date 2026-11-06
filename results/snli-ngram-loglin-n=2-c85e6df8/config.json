@@ -1,0 +1,28 @@
+{
+  "name": "snli-ngram-loglin-n=2",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "bpe",
+    "vocab_size": 8000
+  },
+  "representation": {
+    "kind": "ngram",
+    "min_df": 2,
+    "n": 2
+  },
+  "model": {
+    "kind": "loglinear"
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}
