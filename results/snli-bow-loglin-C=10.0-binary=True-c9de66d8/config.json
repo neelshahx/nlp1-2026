@@ -1,0 +1,28 @@
+{
+  "name": "snli-bow-loglin-C=10.0-binary=True",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "bpe",
+    "vocab_size": 8000
+  },
+  "representation": {
+    "kind": "bow",
+    "binary": true
+  },
+  "model": {
+    "kind": "loglinear",
+    "C": 10.0
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}

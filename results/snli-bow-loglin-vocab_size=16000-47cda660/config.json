@@ -1,0 +1,26 @@
+{
+  "name": "snli-bow-loglin-vocab_size=16000",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "bpe",
+    "vocab_size": 16000
+  },
+  "representation": {
+    "kind": "bow"
+  },
+  "model": {
+    "kind": "loglinear"
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "name": "snli-bow-loglin",
+  "name": "snli-bow-loglin-C=1.0-binary=False",
   "dataset": {
     "k": 5,
     "data_seed": 0,
@@ -11,10 +11,12 @@
     "vocab_size": 8000
   },
   "representation": {
-    "kind": "bow"
+    "kind": "bow",
+    "binary": false
   },
   "model": {
-    "kind": "loglinear"
+    "kind": "loglinear",
+    "C": 1.0
   },
   "model_seeds": [
     0

@@ -1,0 +1,27 @@
+{
+  "name": "snli-bow-mlp",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "bpe",
+    "vocab_size": 8000
+  },
+  "representation": {
+    "kind": "bow"
+  },
+  "model": {
+    "kind": "mlp",
+    "num_epochs": 10
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}
