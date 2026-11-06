@@ -1,8 +1,4 @@
-"""Representation interface: a Pair batch in, Features out.
-
-A Representation receives both premise and hypothesis and decides how to combine them.
-Its vocabulary (if any) is fitted per fold on the training portion only (ADR-0001).
-"""
+"""Representation interface: a batch of premise/hypothesis pairs in, Features out."""
 
 from abc import ABC, abstractmethod
 from typing import Any
@@ -17,14 +13,10 @@ SEP = " [SEP] "
 
 
 class Features:
-    """Output of a Representation for a batch of Pairs.
-
-    ``payload`` is today a ``scipy.sparse.csr_matrix`` of shape ``(n_rows, dim)``. Any
-    row-indexable object is allowed, so a logic-based Representation may hand the Pairs
-    DataFrame straight through with ``dim=None``.
-    """
+    """Output of a Representation for a batch of pairs: a row-indexable ``payload`` plus its shape."""
 
     def __init__(self, payload: Any, n_rows: int | None = None, dim: int | None = None):
+        """``payload`` is usually a sparse ``(n_rows, dim)`` matrix; pass ``dim=None`` for non-matrix payloads."""
         self.payload = payload
         self.n_rows = n_rows if n_rows is not None else payload.shape[0]
         self.dim = dim if dim is not None else getattr(payload, "shape", (None, None))[1]
@@ -37,7 +29,7 @@ class Features:
 
 
 def sides(pairs: pd.DataFrame, pairing: str) -> list[pd.Series]:
-    """The text columns a vector Representation featurises, one entry per feature block."""
+    """Pick which text column(s) to featurise, one entry per feature block; ``joint`` merges both with a separator."""
     if pairing == "concat":
         return [pairs["premise"], pairs["hypothesis"]]
     if pairing == "joint":
@@ -48,6 +40,8 @@ def sides(pairs: pd.DataFrame, pairing: str) -> list[pd.Series]:
 
 
 class Representation(ABC):
+    """Turns premise/hypothesis pairs into Features; decides how the two sides are combined."""
+
     kind: str  # the value of config["representation"]["kind"]
 
     def __init__(self, tokenizer: Tokenizer):
@@ -55,57 +49,57 @@ class Representation(ABC):
 
     @abstractmethod
     def fit(self, pairs: pd.DataFrame) -> "Representation":
-        """Learn any vocabulary from the fold's training Pairs only. Return self."""
+        """Learn any vocabulary from the training pairs of one fold only (ADR-0001). Return self."""
 
     @abstractmethod
     def transform(self, pairs: pd.DataFrame) -> Features:
-        """Featurise a batch of Pairs."""
+        """Featurise a batch of pairs."""
 
     @property
     def dim(self) -> int | None:
+        """Number of features per pair, or ``None`` if the output isn't a fixed-width vector."""
         return None
 
     def fit_transform(self, pairs: pd.DataFrame) -> Features:
+        """``fit`` then ``transform`` on the same pairs."""
         return self.fit(pairs).transform(pairs)
 
 
 class VectorRepresentation(Representation):
-    """Base for Representations that produce one sparse block per side and hstack them.
-
-    Subclasses implement the one-sided ``fit_texts`` / ``transform_texts`` / ``side_dim``;
-    this class handles ``pairing``. With ``concat`` the vocabulary is fitted on both sides'
-    texts pooled, but premise and hypothesis get separate feature blocks. Override
-    ``fit``/``transform`` directly if your Representation doesn't fit this shape.
-    """
+    """Base for Representations that turn each text into a sparse vector; subclasses only handle one text at a time."""
 
     def __init__(self, tokenizer: Tokenizer, pairing: str = "concat"):
+        """``pairing`` chooses which sides are featurised and how (see ``sides``)."""
         super().__init__(tokenizer)
         if pairing not in PAIRINGS:
             raise ValueError(f"unknown pairing {pairing!r}; choose from {PAIRINGS}")
         self.pairing = pairing
 
     def fit(self, pairs: pd.DataFrame) -> "VectorRepresentation":
+        """Learn one shared vocabulary from all selected sides' texts pooled together."""
         texts = [t for side in sides(pairs, self.pairing) for t in side.tolist()]
         self.fit_texts(texts)
         return self
 
     def transform(self, pairs: pd.DataFrame) -> Features:
+        """Vectorise each selected side separately, then place the blocks side by side."""
         blocks = [self.transform_texts(side.tolist()) for side in sides(pairs, self.pairing)]
         return Features(sp.hstack(blocks, format="csr"), dim=self.dim)
 
     @property
     def dim(self) -> int:
+        """``side_dim`` times the number of blocks the pairing produces."""
         return self.side_dim * len(sides(pd.DataFrame({"premise": [""], "hypothesis": [""]}), self.pairing))
 
     @abstractmethod
     def fit_texts(self, texts: list[str]) -> None:
-        """Learn the vocabulary for one side from a list of texts."""
+        """Learn the vocabulary from a list of texts."""
 
     @abstractmethod
     def transform_texts(self, texts: list[str]) -> sp.csr_matrix:
-        """``(len(texts), side_dim)`` sparse matrix."""
+        """One sparse row per text, ``side_dim`` columns."""
 
     @property
     @abstractmethod
     def side_dim(self) -> int:
-        """Width of one side's block."""
+        """Number of features per single text."""

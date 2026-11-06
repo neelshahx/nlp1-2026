@@ -1,5 +1,3 @@
-"""End-to-end smoke test on the toy dataset. Run with ``uv run pytest``."""
-
 import numpy as np
 import pandas as pd
 import pytest

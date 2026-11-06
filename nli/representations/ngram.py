@@ -1,9 +1,6 @@
 """N-gram counts over Tokenizer tokens. OWNER: Neel.
 
-``fit_texts`` must learn the n-gram vocabulary from the training fold only.
-``sklearn.feature_extraction.text.CountVectorizer(analyzer=callable)`` with a callable
-that returns token n-grams from ``self.tokenizer.tokenize`` is the shortest route and
-gives ``min_df``, ``binary`` and ``max_features`` for free. Consider a ``tfidf`` flag.
+Every word sequence of length 1..n seen in training becomes one count feature.
 """
 
 import scipy.sparse as sp
@@ -33,6 +30,7 @@ class NgramRepresentation(VectorRepresentation):
         self._vectorizer = None
 
     def n_gram_finder(self, doc: str) -> list[str]:
+        """Split a text into words, then list every run of 1 to n consecutive words."""
         tokens = self.tokenizer.tokenize(doc)
         n_grams = []
         for k in range(1, self.n + 1):
@@ -40,6 +38,7 @@ class NgramRepresentation(VectorRepresentation):
         return n_grams
 
     def fit_texts(self, texts: list[str]) -> None:
+        """Learn the set of n-grams from these texts only; rare ones can be dropped via min_df/max_features."""
         vectorizer = CountVectorizer(
             min_df=self.min_df,
             binary=self.binary,
@@ -50,9 +49,11 @@ class NgramRepresentation(VectorRepresentation):
         self._vectorizer = vectorizer
 
     def transform_texts(self, texts: list[str]) -> sp.csr_matrix:
+        """Count how often each known n-gram appears in each text (1/0 if binary); unknown ones are ignored."""
         assert self._vectorizer is not None, "run fit_texts first"
         return self._vectorizer.transform(texts)
 
     @property
     def side_dim(self) -> int:
+        """Number of n-grams learned, i.e. the length of one text's count vector."""
         return len(self._vectorizer.vocabulary_)
