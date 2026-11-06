@@ -1,13 +1,11 @@
 from ..tokenizers import Tokenizer
 from .base import PAIRINGS, Features, Representation, VectorRepresentation, sides
 from .bow import BagOfWordsRepresentation
-from .indicator import IndicatorRepresentation
 from .lengths import LengthsRepresentation
 from .ngram import NgramRepresentation
 
 REPRESENTATIONS: dict[str, type[Representation]] = {
     LengthsRepresentation.kind: LengthsRepresentation,
-    IndicatorRepresentation.kind: IndicatorRepresentation,
     BagOfWordsRepresentation.kind: BagOfWordsRepresentation,
     NgramRepresentation.kind: NgramRepresentation,
 }

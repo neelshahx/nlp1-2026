@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 
@@ -39,6 +40,22 @@ def sides(pairs: pd.DataFrame, pairing: str) -> list[pd.Series]:
     raise ValueError(f"unknown pairing {pairing!r}; choose from {PAIRINGS}")
 
 
+def token_count_matrix(tokenizer: Tokenizer, texts: list[str], binary: bool = False) -> sp.csr_matrix:
+    """One row per text, one column per ``tokenizer.vocab`` entry; tokens outside the vocab are dropped."""
+    vocab = tokenizer.vocab
+    rows, cols = [], []
+    for i, text in enumerate(texts):
+        for tok in tokenizer.tokenize(text):
+            if tok in vocab:
+                rows.append(i)
+                cols.append(vocab[tok])
+    ones = np.ones(len(rows), dtype=np.float32)
+    X = sp.csr_matrix((ones, (rows, cols)), shape=(len(texts), len(vocab)))  # duplicates sum to counts
+    if binary:
+        X.data[:] = 1
+    return X
+
+
 class Representation(ABC):
     """Turns premise/hypothesis pairs into Features; decides how the two sides are combined."""
 
@@ -49,7 +66,7 @@ class Representation(ABC):
 
     @abstractmethod
     def fit(self, pairs: pd.DataFrame) -> "Representation":
-        """Learn any vocabulary from the training pairs of one fold only (ADR-0001). Return self."""
+        """Learn any vocabulary from the training pairs of one fold only. Return self."""
 
     @abstractmethod
     def transform(self, pairs: pd.DataFrame) -> Features:
