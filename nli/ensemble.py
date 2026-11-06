@@ -12,16 +12,16 @@ COMBINERS = ("mean_proba", "majority")
 
 
 def combine(probs_list: list[np.ndarray], combiner: str) -> np.ndarray:
-    """Merge member probability matrices into one ``(n, 3)`` matrix (core, pure).
+    """Merge member probability matrices into one ``(n, 3)`` matrix.
 
-    ``majority`` returns vote fractions; ties resolve to the lowest label index via argmax.
-    KNOWN ISSUE in the tutorial: ``MajorityVoteClassifier`` broke ties randomly with its own seed.
+    ``mean_proba`` averages probabilities; ``majority`` returns vote fractions, so ties resolve to the lowest
+    label index under argmax.
     """
-    stack = np.stack(probs_list)  # (members, n, 3)
+    stack = np.stack(probs_list)
     if combiner == "mean_proba":
         return stack.mean(axis=0)
     if combiner == "majority":
-        votes = stack.argmax(axis=2)  # (members, n)
+        votes = stack.argmax(axis=2)
         counts = np.stack([(votes == c).sum(axis=0) for c in range(len(LABELS))], axis=1)
         return counts / counts.sum(axis=1, keepdims=True)
     raise ValueError(f"unknown combiner {combiner!r}; choose from {COMBINERS}")
@@ -33,8 +33,6 @@ def ensemble_on_dev(
     """Score the Ensemble of a Result's Fold models (all seeds by default) on the dev set.
 
     Reads the dev predictions ``run_experiment`` stored, so no model is reloaded.
-    Heterogeneous ensembles (members from different Experiments) are not built yet; when
-    needed, read several Results' dev predictions and call ``combine`` on them.
     """
     seeds = result.seeds if seeds is None else seeds
     k = result.config["dataset"]["k"]

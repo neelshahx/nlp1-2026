@@ -1,9 +1,4 @@
-"""Bayesian comparison of two Results with a ROPE (core; wraps ``baycomp``).
-
-KNOWN ISSUES in the tutorial's ``BenavoliCorrelatedT``: it never passed ``runs`` when
-several seeds were used, and built baycomp with ``rope=0`` then recomputed probabilities
-itself. Here ``runs=len(seeds)`` always, and baycomp does the arithmetic.
-"""
+"""Bayesian comparison of two Results with a region of practical equivalence (ROPE); wraps ``baycomp``."""
 
 import numpy as np
 
@@ -12,7 +7,7 @@ from .store import Result
 
 def _check_paired(a: Result, b: Result, metric: str) -> tuple[np.ndarray, np.ndarray]:
     if a.folds_key != b.folds_key:
-        raise ValueError(f"unpaired comparison: folds differ ({a.folds_key} vs {b.folds_key}); see ADR-0001")
+        raise ValueError(f"unpaired comparison: folds differ ({a.folds_key} vs {b.folds_key})")
     if a.seeds != b.seeds:
         raise ValueError(f"unpaired comparison: model seeds differ ({a.seeds} vs {b.seeds})")
     x, y = a.per_fold(metric), b.per_fold(metric)
@@ -22,7 +17,7 @@ def _check_paired(a: Result, b: Result, metric: str) -> tuple[np.ndarray, np.nda
 
 
 def compare(a: Result, b: Result, metric: str = "accuracy", rope: float = 0.01, plot: bool = False) -> dict:
-    """Correlated Bayesian t-test (``baycomp.two_on_single``) between two Results on one Dataset.
+    """Correlated Bayesian t-test between two Results on the same folds; ``runs`` is the number of model seeds.
 
     Returns ``{"left", "right", "metric", "rope", "runs", "p_left", "p_rope", "p_right"}``
     plus ``"fig"`` when ``plot`` is true. ``rope`` is in metric units (0.01 = one accuracy point).
@@ -53,11 +48,10 @@ def compare(a: Result, b: Result, metric: str = "accuracy", rope: float = 0.01, 
 def compare_across_datasets(
     pairs: list[tuple[Result, Result]], metric: str = "accuracy", rope: float = 0.01, plot: bool = False
 ) -> dict:
-    """Hierarchical test (``baycomp.two_on_multiple``): the same two systems on several Datasets.
+    """Hierarchical test of the same two systems on several Datasets.
 
-    ``pairs`` is one ``(a, b)`` per Dataset, each paired as in ``compare``. All must share
-    the same number of scores. Returns the same keys as ``compare`` with ``left``/``right``
-    as lists of ids.
+    ``pairs`` is one ``(a, b)`` per Dataset, each paired as in ``compare`` and with the same number of
+    scores. Returns the same keys as ``compare`` with ``left``/``right`` as lists of ids.
     """
     import baycomp
 

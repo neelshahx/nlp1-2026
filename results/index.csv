@@ -1,0 +1,2 @@
+id,name,dataset,tokenizer,representation,model,created,config_json
+snli-bow-loglin-9db2156a,snli-bow-loglin,snli,bpe,bow,loglinear,2026-11-06T11:13:45+00:00,"{""dataset"": {""data_seed"": 0, ""k"": 5, ""name"": ""snli"", ""rounds"": null}, ""metrics"": [""accuracy"", ""macro_f1""], ""model"": {""kind"": ""loglinear""}, ""model_seeds"": [0], ""name"": ""snli-bow-loglin"", ""representation"": {""kind"": ""bow""}, ""tokenizer"": {""kind"": ""bpe"", ""vocab_size"": 8000}}"
