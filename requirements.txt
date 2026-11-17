@@ -2,3 +2,4 @@ numpy
 scipy
 torch
 datasets
+transformers

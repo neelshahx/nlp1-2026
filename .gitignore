@@ -10,3 +10,4 @@ models/*
 results/*.txt
 .DS_Store
 results/*/predictions/
+cache/
