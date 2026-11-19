@@ -1,0 +1,24 @@
+{
+  "bowman-sum": {
+    "note": "Embed-and-pool baseline: Bowman et al. (2015) 100d sum of words over GloVe 300d; trainable vs frozen embeddings.",
+    "base": {
+      "name": "snli-glove-bowman-sum",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "treebank"},
+      "representation": {"kind": "glove", "dim": 300},
+      "model": {"kind": "bowman", "encoder": "sum"}
+    },
+    "overrides": {"model.freeze_embeddings": [false, true]}
+  },
+  "bowman-lstm": {
+    "note": "Recurrent encoder: Bowman et al. (2015) 100d LSTM over GloVe 300d; trainable vs frozen embeddings.",
+    "base": {
+      "name": "snli-glove-bowman-lstm",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "treebank"},
+      "representation": {"kind": "glove", "dim": 300},
+      "model": {"kind": "bowman", "encoder": "lstm"}
+    },
+    "overrides": {"model.freeze_embeddings": [false, true]}
+  }
+}

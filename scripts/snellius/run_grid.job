@@ -1,0 +1,51 @@
+#!/bin/bash
+# Run grids through the k-fold pipeline on one GPU (scripts/run_grid.py). Stored Experiments are skipped, so a
+# timed-out job can simply be resubmitted; only the Experiment that was running when it stopped is redone.
+#
+# Submit from the repo root on Snellius, one job per grid so each fits its own time limit:
+#   sbatch scripts/snellius/run_grid.job grids/snli_rnn.json --only bowman-sum
+#   sbatch --time=12:00:00 scripts/snellius/run_grid.job grids/snli_rnn.json --only bowman-lstm
+# List what's pending first:  .venv/bin/python scripts/run_grid.py grids/snli_rnn.json --dry-run
+#
+# One-time setup on the login node (uv runs there only; compute nodes never call uv and may have no internet):
+#   1. clone the repo; copy GloVe: rsync data/glove.6B/glove.6B.300d.txt snellius:<repo>/data/glove.6B/
+#   2. install uv (curl -LsSf https://astral.sh/uv/install.sh | sh), then
+#        UV_PYTHON_INSTALL_DIR=$PWD/.uv-python uv sync
+#      so the venv and the Python it links to both live in the repo, visible from compute nodes
+#   3. warm the HF dataset cache:  .venv/bin/python -c "from nli.data import load_snli; load_snli()"
+#   4. check it on a compute node before the real run:
+#        srun --partition=gpu_mig --gpus=1 --time=00:05:00 .venv/bin/python -c "import torch; print(torch.cuda.is_available())"
+#
+# Fallback if the uv venv won't run on compute nodes: build a conda env on the login node
+#   (conda create -n nli python=3.13 && conda activate nli && uv export --no-hashes --no-dev > req.txt &&
+#    pip install -r req.txt) and submit with CONDA_ENV=nli sbatch ... ; set CONDA_MODULE if conda is an env module.
+#
+# Outputs land in results/<experiment id>/ (scores + heldout/dev predictions) and models/<experiment id>/;
+# rsync both back. Test predictions are NOT made here: run experiment.predict_split once, after selection on dev.
+#
+#SBATCH --job-name=nli-grid
+#SBATCH --partition=gpu_mig          # A100 slice; switch to gpu_a100 if memory/speed is a problem
+#SBATCH --gpus=1
+#SBATCH --cpus-per-task=9
+#SBATCH --time=08:00:00
+#SBATCH --output=slurm-%x-%j.out
+# #SBATCH --account=<your-budget>    # fill in if you have more than one budget
+
+set -euo pipefail
+cd "$SLURM_SUBMIT_DIR"
+
+export HF_DATASETS_OFFLINE=1         # use the cache warmed on the login node
+export PYTHONUNBUFFERED=1
+nvidia-smi || true
+
+if [[ -n "${CONDA_ENV:-}" ]]; then
+    [[ -n "${CONDA_MODULE:-}" ]] && module load "$CONDA_MODULE"
+    eval "$(conda shell.bash hook)"
+    conda activate "$CONDA_ENV"
+    PY=python
+else
+    PY="$SLURM_SUBMIT_DIR/.venv/bin/python"   # built by `uv sync` on the login node; no uv needed here
+fi
+"$PY" -c "import sys, torch; print(sys.executable, torch.__version__, 'cuda', torch.cuda.is_available())"
+
+"$PY" scripts/run_grid.py "$@"

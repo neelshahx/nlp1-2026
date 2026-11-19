@@ -1,10 +1,12 @@
 from .base import UNK, Tokenizer
 from .bpe import BPETokenizer
+from .treebank import TreebankTokenizer
 from .wordlevel import WordLevelTokenizer
 
 TOKENIZERS: dict[str, type[Tokenizer]] = {
     WordLevelTokenizer.kind: WordLevelTokenizer,
     BPETokenizer.kind: BPETokenizer,
+    TreebankTokenizer.kind: TreebankTokenizer,
 }
 
 

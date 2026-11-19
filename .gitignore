@@ -12,3 +12,7 @@ results/*.txt
 results/*/predictions/
 cache/
 CLAUDE.local.md
+data/
+runs/
+slurm-*.out
+.uv-python/

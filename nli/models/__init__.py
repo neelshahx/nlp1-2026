@@ -1,4 +1,5 @@
 from .base import Model
+from .bowman import BowmanModel
 from .loglinear import LogLinearModel
 from .majority import MajorityModel
 from .mlp import MLPModel
@@ -7,6 +8,7 @@ MODELS: dict[str, type[Model]] = {
     MajorityModel.kind: MajorityModel,
     LogLinearModel.kind: LogLinearModel,
     MLPModel.kind: MLPModel,
+    BowmanModel.kind: BowmanModel,
 }
 
 
