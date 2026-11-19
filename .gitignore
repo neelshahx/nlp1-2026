@@ -11,3 +11,4 @@ results/*.txt
 .DS_Store
 results/*/predictions/
 cache/
+CLAUDE.local.md
