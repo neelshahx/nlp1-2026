@@ -46,6 +46,6 @@ if [[ -n "${CONDA_ENV:-}" ]]; then
 else
     PY="$SLURM_SUBMIT_DIR/.venv/bin/python"   # built by `uv sync` on the login node; no uv needed here
 fi
-"$PY" -c "import sys, torch; print(sys.executable, torch.__version__, 'cuda', torch.cuda.is_available())"
+"$PY" -c "import sys, torch; print(sys.executable, torch.__version__, 'cuda', torch.cuda.is_available()); assert torch.cuda.is_available(), 'no GPU visible; refusing to train on CPU'"
 
 "$PY" scripts/run_grid.py "$@"
