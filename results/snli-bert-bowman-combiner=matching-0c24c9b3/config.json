@@ -1,0 +1,28 @@
+{
+  "name": "snli-bert-bowman-combiner=matching",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "wordpiece"
+  },
+  "representation": {
+    "kind": "bert",
+    "pairing": "sentences"
+  },
+  "model": {
+    "kind": "bowman_bert",
+    "combiner": "matching"
+  },
+  "model_seeds": [
+    0,
+    1
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}

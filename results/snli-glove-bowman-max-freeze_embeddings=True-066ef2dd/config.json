@@ -1,0 +1,29 @@
+{
+  "name": "snli-glove-bowman-max-freeze_embeddings=True",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "treebank"
+  },
+  "representation": {
+    "kind": "glove",
+    "dim": 300
+  },
+  "model": {
+    "kind": "bowman",
+    "encoder": "max",
+    "freeze_embeddings": true
+  },
+  "model_seeds": [
+    0,
+    1
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}

@@ -12,7 +12,7 @@
 # ---
 
 # %% [markdown]
-# # Project 2, point 6: error analysis with the BDA model (V1.1)
+# # Project 2, point 6: error analysis with the BDA model (V1.2: + GloVe max pool, BERT)
 #
 # Which properties of an SNLI pair predict whether a system classifies it correctly, and do those properties
 # affect different designs differently?
@@ -55,10 +55,16 @@ SYSTEMS = {  # short name -> (experiment id, root holding results/<id>/predictio
     ),
     "sum": ("snli-glove-bowman-sum-freeze_embeddings=False-efb8a605", "."),
     "lstm": ("snli-glove-bowman-lstm-freeze_embeddings=False-2e249164", "."),
+    # V1.2: best embed-and-pool and best BERT (frozen, mean-pooled, matching features)
+    "max": ("snli-glove-bowman-max-freeze_embeddings=False-b6d749c2", "."),
+    "bert": ("snli-bert-bowman-combiner=matching-0c24c9b3", "."),
 }
 FEATURES = ["hypothesis_len", "premise_len", "overlap", "negation", "cue_gold", "cue_misleading"]
-DIFFERENCES = [("bow-loglin", "hyp-only"), ("mlp", "bow-loglin"), ("lstm", "sum"), ("lstm", "bow-loglin")]
-FIGURES = Path("results/figures/bda-v1.1")
+DIFFERENCES = [
+    ("bow-loglin", "hyp-only"), ("mlp", "bow-loglin"), ("lstm", "sum"), ("lstm", "bow-loglin"),
+    ("lstm", "max"), ("bert", "lstm"), ("bert", "bow-loglin"),  # V1.2
+]
+FIGURES = Path("results/figures/bda-v1.2")
 FIGURES.mkdir(parents=True, exist_ok=True)
 
 ROOT = analysis.link_results({eid: root for eid, root in SYSTEMS.values()}, "local-runs/analysis")
@@ -110,6 +116,9 @@ by_label.round(3)
 
 # %%
 binned = {f: analysis.accuracy_by_bin(table, features, f) for f in FEATURES}
+pd.concat([b.assign(feature=f) for f, b in binned.items()]).astype({"bin": str}).to_csv(
+    FIGURES / "accuracy_by_bin.csv", index=False
+)  # V1.2: exact numbers for the slides
 fig = plotting.plot_accuracy_by_bin(binned)
 fig.savefig(FIGURES / "accuracy_by_bin.png", dpi=150, bbox_inches="tight")
 
