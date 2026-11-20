@@ -23,6 +23,18 @@
     },
     "overrides": {"model.freeze_embeddings": [false, true]}
   },
+  "bowman-gru": {
+    "note": "E1.1 GRU encoder: Bowman et al. (2015) setup with a 100d GRU (last hidden state) in place of the LSTM, over GloVe 300d; trainable vs frozen embeddings.",
+    "base": {
+      "name": "snli-glove-bowman-gru",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "treebank"},
+      "representation": {"kind": "glove", "dim": 300},
+      "model": {"kind": "bowman", "encoder": "gru"},
+      "model_seeds": [0, 1]
+    },
+    "overrides": {"model.freeze_embeddings": [false, true]}
+  },
   "bowman-mean": {
     "note": "E0.1 embed-and-pool pooling ablation: mean of projected GloVe 300d word vectors (vs bowman-sum); trainable vs frozen.",
     "base": {

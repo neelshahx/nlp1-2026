@@ -6,6 +6,7 @@ sentence encoder with shared weights for premise and hypothesis -> [premise; hyp
 
 ``encoder`` picks the sentence encoder:
 - ``lstm``: 100d LSTM, last hidden state (the paper's 100d LSTM model)
+- ``gru``: 100d GRU, last hidden state (same setup with a GRU cell in place of the LSTM)
 - ``sum``: sum of projected word vectors (the paper's 100d sum-of-words embed-and-pool baseline)
 - ``mean`` / ``max``: other pooling choices over the same projected word vectors
 
@@ -25,7 +26,7 @@ from ..representations import Features
 from ..representations.glove import PAD_IDX, SequencePairs
 from .base import Model
 
-ENCODERS = ("lstm", "sum", "mean", "max")
+ENCODERS = ("lstm", "gru", "sum", "mean", "max")
 EVAL_BATCH = 1024  # pairs per forward pass when no gradients are needed; only bounds memory
 
 
@@ -54,7 +55,8 @@ class BowmanNet(nn.Module):
         self.proj = nn.Sequential(nn.Linear(embeddings.shape[1], proj_dim), nn.Tanh())
         # shared between premise and hypothesis
         self.lstm = nn.LSTM(proj_dim, hidden_dim, batch_first=True) if encoder == "lstm" else None
-        sent_dim = hidden_dim if encoder == "lstm" else proj_dim
+        self.gru = nn.GRU(proj_dim, hidden_dim, batch_first=True) if encoder == "gru" else None
+        sent_dim = hidden_dim if encoder in ["lstm", "gru"] else proj_dim
         self.drop = nn.Dropout(dropout)
         layers: list[nn.Module] = []
         in_dim = 2 * sent_dim
@@ -67,10 +69,15 @@ class BowmanNet(nn.Module):
     def encode(self, ids: torch.Tensor, lengths: torch.Tensor) -> torch.Tensor:
         """(B, L) token ids + (B,) sentence lengths -> (B, sentence_dim) sentence vectors."""
         x = self.drop(self.proj(self.embed(ids)))  # (B, L, proj_dim)
-        if self.lstm is not None:
-            # pack so the LSTM stops at each sentence's last real token; h_n[-1] is that state
+        if self.encoder in ["lstm", "gru"]:
+            # pack so the LSTM/GRU stops at each sentence's last real token; h_n[-1] is that state
             packed = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
-            _, (h_n, _) = self.lstm(packed)
+            if self.lstm is not None:
+                _, (h_n, _) = self.lstm(packed)
+            elif self.gru is not None:
+                _, h_n = self.gru(packed)
+            else:
+                raise NotImplementedError(f"recurrent encoder {self.encoder!r} has no module set")
             return self.drop(h_n[-1])
         # tanh(W*0 + b) != 0, so padding must be masked out explicitly before pooling
         mask = (ids != self.pad_idx).unsqueeze(-1)

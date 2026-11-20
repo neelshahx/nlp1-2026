@@ -79,7 +79,7 @@ def test_fit_predict_save_load(glove_file, tmp_path, freeze):
     assert np.allclose(loaded.predict_proba(rep.transform(toy["dev"])), probs)
 
 
-@pytest.mark.parametrize("encoder", ["sum", "lstm"])
+@pytest.mark.parametrize("encoder", ["sum", "lstm", "gru"])
 def test_runs_through_the_fold_pipeline(glove_file, tmp_path, encoder):
     cfg = copy.deepcopy(EXAMPLE_CONFIG)
     cfg["name"] = f"toy-glove-bowman-{encoder}"
