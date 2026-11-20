@@ -1,5 +1,5 @@
 {
-  "name": "snli-glove-bowman-lstm-freeze_embeddings=False",
+  "name": "snli-hyp-only-bow-loglin",
   "dataset": {
     "k": 5,
     "data_seed": 0,
@@ -7,19 +7,19 @@
     "name": "snli"
   },
   "tokenizer": {
-    "kind": "treebank"
+    "kind": "bpe",
+    "vocab_size": 8000
   },
   "representation": {
-    "kind": "glove",
-    "dim": 300
+    "kind": "bow",
+    "pairing": "hypothesis_only"
   },
   "model": {
-    "kind": "bowman",
-    "encoder": "lstm",
-    "freeze_embeddings": false
+    "kind": "loglinear"
   },
   "model_seeds": [
-    0
+    0,
+    1
   ],
   "metrics": [
     "accuracy",

@@ -1,5 +1,5 @@
 {
-  "name": "snli-glove-bowman-lstm-freeze_embeddings=True",
+  "name": "snli-glove-bowman-lstm-freeze_embeddings=False",
   "dataset": {
     "k": 5,
     "data_seed": 0,
@@ -16,10 +16,11 @@
   "model": {
     "kind": "bowman",
     "encoder": "lstm",
-    "freeze_embeddings": true
+    "freeze_embeddings": false
   },
   "model_seeds": [
-    0
+    0,
+    1
   ],
   "metrics": [
     "accuracy",

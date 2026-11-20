@@ -19,7 +19,8 @@
     "freeze_embeddings": true
   },
   "model_seeds": [
-    0
+    0,
+    1
   ],
   "metrics": [
     "accuracy",

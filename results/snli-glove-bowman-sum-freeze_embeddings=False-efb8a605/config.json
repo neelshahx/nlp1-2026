@@ -1,5 +1,5 @@
 {
-  "name": "snli-hyp-only-bow-loglin",
+  "name": "snli-glove-bowman-sum-freeze_embeddings=False",
   "dataset": {
     "k": 5,
     "data_seed": 0,
@@ -7,18 +7,20 @@
     "name": "snli"
   },
   "tokenizer": {
-    "kind": "bpe",
-    "vocab_size": 8000
+    "kind": "treebank"
   },
   "representation": {
-    "kind": "bow",
-    "pairing": "hypothesis_only"
+    "kind": "glove",
+    "dim": 300
   },
   "model": {
-    "kind": "loglinear"
+    "kind": "bowman",
+    "encoder": "sum",
+    "freeze_embeddings": false
   },
   "model_seeds": [
-    0
+    0,
+    1
   ],
   "metrics": [
     "accuracy",
