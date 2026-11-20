@@ -1,0 +1,49 @@
+#!/bin/bash
+# Regenerate predictions (and fold models) for stored Experiments on CPU only, one Experiment per array task
+# (scripts/regen_predictions.py). Each task reruns its Experiment's exact config from results/index.csv into its
+# own root, local-runs/regen/<id>/ (gitignored), so committed results are never touched and parallel tasks don't
+# race on the cached tokenizer. Afterwards, scripts/adopt_predictions.py checks the rerun's scores match the
+# committed folds.csv and moves predictions + models into results/<id>/ and models/<id>/.
+#
+# Submit from the repo root on Snellius. Pass the ids as arguments; --array indexes into them (0-based):
+#   IDS="snli-hyp-only-bow-loglin-8059a0af snli-bow-mlp-hidden_dim=128-n_blocks=0-f8c85fe5 \
+#        snli-bow-mlp-hidden_dim=128-n_blocks=2-fc266eb2 snli-bow-mlp-hidden_dim=512-n_blocks=0-38b6d7fe"
+#   sbatch --array=0 --time=01:00:00 scripts/snellius/regen_predictions.job $IDS     # test: hyp-only only
+#   sbatch --array=1-3 scripts/snellius/regen_predictions.job $IDS                  # then the three MLPs
+# Check one finished task's usage:  sacct -j <jobid>_<task> -o JobID,MaxRSS,Elapsed,State
+#
+# Sizing: one rome slice (16 cores, 28 GiB) is the smallest billable unit, 16 SBU/h; asking for less still costs
+# a slice, more costs two. On a laptop CPU (Nov 6) the MLPs took ~30 min (128 wide) to ~3 h (512 wide) for two
+# seeds; hyp-only is a few minutes per seed. Billing is for elapsed time, so the generous --time only caps a hang.
+#
+# Uses the same uv venv as run_grid.job (see its header for the one-time setup); compute nodes never call uv.
+#
+#SBATCH --job-name=nli-regen
+#SBATCH --partition=rome
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=28G
+#SBATCH --time=06:00:00
+#SBATCH --output=slurm-%x-%A_%a.out
+# #SBATCH --account=<your-budget>    # fill in if you have more than one budget
+
+set -euo pipefail
+cd "$SLURM_SUBMIT_DIR"
+
+IDS=("$@")
+if [[ -z "${SLURM_ARRAY_TASK_ID:-}" || ${#IDS[@]} -eq 0 ]]; then
+    echo "submit as an array job with ids as arguments; see the header" >&2
+    exit 2
+fi
+ID="${IDS[$SLURM_ARRAY_TASK_ID]}"
+
+export HF_DATASETS_OFFLINE=1           # use the cache warmed on the login node
+export PYTHONUNBUFFERED=1
+export CUDA_VISIBLE_DEVICES=""         # CPU only, whatever the node has
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK" MKL_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+
+PY="$SLURM_SUBMIT_DIR/.venv/bin/python"
+"$PY" -c "import sys, torch; print(sys.executable, torch.__version__, 'threads', torch.get_num_threads())"
+echo "task $SLURM_ARRAY_TASK_ID: $ID"
+
+"$PY" scripts/regen_predictions.py --root "local-runs/regen/$ID" "$ID"
