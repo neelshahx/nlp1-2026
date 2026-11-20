@@ -20,5 +20,29 @@
       "model": {"kind": "bowman", "encoder": "lstm"}
     },
     "overrides": {"model.freeze_embeddings": [false, true]}
+  },
+  "bowman-sum-seed1": {
+    "note": "Second model seed for bowman-sum; merged locally with the seed-0 Results into model_seeds [0, 1].",
+    "base": {
+      "name": "snli-glove-bowman-sum",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "treebank"},
+      "representation": {"kind": "glove", "dim": 300},
+      "model": {"kind": "bowman", "encoder": "sum"},
+      "model_seeds": [1]
+    },
+    "overrides": {"model.freeze_embeddings": [false, true]}
+  },
+  "bowman-lstm-seed1": {
+    "note": "Second model seed for bowman-lstm; merged locally with the seed-0 Results into model_seeds [0, 1].",
+    "base": {
+      "name": "snli-glove-bowman-lstm",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "treebank"},
+      "representation": {"kind": "glove", "dim": 300},
+      "model": {"kind": "bowman", "encoder": "lstm"},
+      "model_seeds": [1]
+    },
+    "overrides": {"model.freeze_embeddings": [false, true]}
   }
 }
