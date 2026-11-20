@@ -16,3 +16,4 @@ data/
 runs/
 slurm-*.out
 .uv-python/
+local-runs/

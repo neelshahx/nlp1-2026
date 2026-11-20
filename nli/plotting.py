@@ -84,6 +84,31 @@ def plot_confusion(predictions: pd.DataFrame, title: str = "") -> plt.Figure:
     return fig
 
 
+def plot_accuracy_by_bin(binned: dict[str, pd.DataFrame]) -> plt.Figure:
+    """One panel per feature: accuracy per bin and system, bars spanning min to max over fold/seed models.
+
+    ``binned`` maps a feature name to ``analysis.accuracy_by_bin(table, features, feature)``.
+    """
+    fig, axes = plt.subplots(1, len(binned), figsize=(4 * len(binned), 3.5), sharey=True, squeeze=False)
+    for ax, (feature, df) in zip(axes[0], binned.items(), strict=True):
+        bins = list(dict.fromkeys(df["bin"].astype(str)))
+        systems = list(dict.fromkeys(df["system"]))
+        width = 0.8 / len(systems)
+        for i, system in enumerate(systems):
+            sub = df[df["system"] == system]
+            sub = sub.set_index(sub["bin"].astype(str)).reindex(bins)
+            x = np.arange(len(bins)) + (i - (len(systems) - 1) / 2) * width
+            err = np.vstack([sub["mean"] - sub["min"], sub["max"] - sub["mean"]]).clip(min=0)  # float round-off
+            ax.errorbar(x, sub["mean"], yerr=err, fmt="o", capsize=3, label=system)
+        ax.set_xticks(range(len(bins)), bins, rotation=30, ha="right")
+        ax.set_title(feature)
+        ax.set_xlabel("bin")
+    axes[0][0].set_ylabel("accuracy")
+    axes[0][-1].legend(loc="best")
+    fig.tight_layout()
+    return fig
+
+
 def plot_learning_curve(history: list[dict]) -> plt.Figure:
     """Train/val loss and accuracy per epoch from ``MLPModel.history``."""
     df = pd.DataFrame(history)
