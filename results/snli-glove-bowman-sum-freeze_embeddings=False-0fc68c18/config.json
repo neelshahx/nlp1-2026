@@ -1,0 +1,28 @@
+{
+  "name": "snli-glove-bowman-sum-freeze_embeddings=False",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "treebank"
+  },
+  "representation": {
+    "kind": "glove",
+    "dim": 300
+  },
+  "model": {
+    "kind": "bowman",
+    "encoder": "sum",
+    "freeze_embeddings": false
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}

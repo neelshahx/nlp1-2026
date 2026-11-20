@@ -1,0 +1,28 @@
+{
+  "name": "snli-glove-bowman-lstm-freeze_embeddings=True",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "treebank"
+  },
+  "representation": {
+    "kind": "glove",
+    "dim": 300
+  },
+  "model": {
+    "kind": "bowman",
+    "encoder": "lstm",
+    "freeze_embeddings": true
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}
