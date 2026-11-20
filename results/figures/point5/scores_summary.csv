@@ -1,0 +1,23 @@
+stage,label,mean,sd,min,max,n
+A. log-linear,C=0.1 counts,64.24,0.13,64.13,64.45,5
+A. log-linear,C=0.1 binary,64.28,0.12,64.2,64.49,5
+A. log-linear,C=1 counts,64.2,0.14,64.03,64.4,5
+A. log-linear,C=1 binary,64.28,0.14,64.14,64.51,5
+A. log-linear,C=10 counts,63.98,0.15,63.83,64.21,5
+A. log-linear,C=10 binary,64.07,0.13,63.97,64.3,5
+B. log-linear inputs,BPE 4k,63.97,0.14,63.84,64.22,5
+B. log-linear inputs,BPE 8k,64.2,0.14,64.03,64.4,5
+B. log-linear inputs,BPE 16k,63.89,0.12,63.74,64.02,5
+B. log-linear inputs,word-level,63.93,0.06,63.84,64.02,5
+B. log-linear inputs,n-gram n=1,64.21,0.15,64.03,64.42,5
+B. log-linear inputs,n-gram n=2,58.55,0.09,58.42,58.67,5
+B. log-linear inputs,joint pairing,58.82,0.07,58.73,58.91,5
+B. log-linear inputs,hypothesis only,63.74,0.05,63.69,63.83,10
+C. BoW MLP,"128, 0 blocks (seed 0 only)",72.47,0.28,72.07,72.73,5
+C. BoW MLP,"128, 0 blocks",72.45,0.24,72.02,72.73,10
+C. BoW MLP,"128, 2 blocks",72.26,0.13,72.02,72.43,10
+C. BoW MLP,"512, 0 blocks",72.69,0.15,72.38,72.9,10
+D. Bowman,"sum, trainable",72.15,1.15,69.85,73.22,10
+D. Bowman,"sum, frozen",69.87,1.1,68.02,71.2,10
+D. Bowman,"LSTM, trainable",75.38,0.87,73.97,76.31,10
+D. Bowman,"LSTM, frozen",75.07,0.75,73.42,76.02,10

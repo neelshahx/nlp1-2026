@@ -1,8 +1,49 @@
 """Bayesian comparison of two Results with a region of practical equivalence (ROPE); wraps ``baycomp``."""
 
 import numpy as np
+import pandas as pd
 
 from .store import Result
+
+
+def restrict_seeds(result: Result, seeds: list[int]) -> Result:
+    """The same Result with only the scores of ``seeds``, so it can be paired with a Result run on fewer seeds."""
+    missing = set(seeds) - set(result.seeds)
+    if missing:
+        raise ValueError(f"{result.id} has no seeds {sorted(missing)}")
+    config = {**result.config, "model_seeds": list(seeds)}
+    return Result(result.id, config, result.scores[result.scores["seed"].isin(seeds)].reset_index(drop=True))
+
+
+def seed_fold_spread(result: Result, metric: str = "accuracy") -> dict:
+    """Split a Result's run-to-run spread into a fold part and a seed part (needs >= 2 seeds).
+
+    ``sd_seed``: typical sd between seeds on the same fold, sqrt(mean over folds of the between-seed variance),
+    i.e. training randomness with the data held fixed. ``sd_fold``: sd over folds of the seed-averaged score,
+    i.e. what changing the train/held-out split does. ``max_seed_gap``: the largest seed-to-seed difference on
+    any one fold.
+    """
+    df = result.scores[result.scores["metric"] == metric]
+    table = df.pivot(index="fold", columns="seed", values="value")  # (fold, seed)
+    if table.shape[1] < 2:
+        raise ValueError(f"{result.id} has one seed; the seed part of the spread needs at least two")
+    return {
+        "id": result.id,
+        "seeds": table.shape[1],
+        "mean": float(table.to_numpy().mean()),
+        "sd_fold": float(table.mean(axis=1).std(ddof=1)),
+        "sd_seed": float(np.sqrt(table.var(axis=1, ddof=1).mean())),
+        "max_seed_gap": float((table.max(axis=1) - table.min(axis=1)).max()),
+    }
+
+
+def compare_table(pairs: list[tuple[Result, Result]], metric: str = "accuracy", rope: float = 0.01) -> pd.DataFrame:
+    """``compare`` for each ``(a, b)`` pair, one row each, with the mean difference ``a - b`` added."""
+    rows = []
+    for a, b in pairs:
+        out = compare(a, b, metric=metric, rope=rope)
+        rows.append({**out, "mean_diff": a.mean(metric) - b.mean(metric)})
+    return pd.DataFrame(rows)
 
 
 def _check_paired(a: Result, b: Result, metric: str) -> tuple[np.ndarray, np.ndarray]:

@@ -53,6 +53,7 @@ known-first-party = ["nli"]
 [tool.ruff.lint.per-file-ignores]
 "project1.py" = ["F401", "B018"]  # imports for later cells; bare expressions display output
 "project2_analysis.py" = ["B018"]  # bare expressions display output
+"project2_experiments.py" = ["B018"]
 
 [tool.basedpyright]
 typeCheckingMode = "standard"

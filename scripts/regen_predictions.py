@@ -4,7 +4,7 @@
 This reads each Experiment's exact config from ``results/index.csv`` and runs it under ``--root`` (default
 ``local-runs/``, gitignored), so the committed ``folds.csv`` files are never touched and ids stay identical.
 
-    uv run python scripts/regen_predictions.py snli-hyp-only-bow-loglin-7108aed7 snli-bow-mlp-9d26a5aa
+    uv run python scripts/regen_predictions.py snli-hyp-only-bow-loglin-8059a0af snli-bow-mlp-9d26a5aa
     uv run python scripts/regen_predictions.py --list
 """
 

@@ -27,6 +27,112 @@ from .tokenizers import Tokenizer
 # --- items and features (ours) --------------------------------------------------------------------------
 
 NEGATION = re.compile(r"\b(?:no|not|never|nobody|nothing|none|nowhere|neither|nor|cannot)\b|n't")
+# Purpose clauses ("to X", because, so that): a neutral cue in SNLI (Gururangan et al. 2018, section 4)
+PURPOSE = re.compile(r"\b(?:because|in order to|so that)\b|\bto [a-z]+\b")
+
+
+def link_results(sources: dict[str, Path | str], dest: Path | str) -> Path:
+    """One results root for systems whose stored Results live under different roots (shell).
+
+    ``sources`` maps an experiment id to the root that holds ``results/<id>/``; each becomes a symlink
+    ``dest/results/<id>``, so ``item_table`` and ``load_result`` can read every system from ``dest``.
+    """
+    dest = Path(dest)
+    (dest / "results").mkdir(parents=True, exist_ok=True)
+    for eid, root in sources.items():
+        target = (Path(root) / "results" / eid).resolve()
+        if not (target / "predictions").is_dir():
+            raise FileNotFoundError(f"no predictions for {eid} under {root}")
+        link = dest / "results" / eid
+        if link.is_symlink() or link.exists():
+            link.unlink()
+        link.symlink_to(target, target_is_directory=True)
+    return dest
+
+
+def cue_words(pairs: pd.DataFrame, tokenizer: Tokenizer, top_n: int = 15, smoothing: float = 100.0) -> pd.DataFrame:
+    """Top ``top_n`` hypothesis words per label by smoothed PMI (Gururangan et al. 2018, section 3.1).
+
+    Counts are document-level (a word counts once per hypothesis). Every (word, label) count gets
+    ``smoothing`` added before ``PMI(w, c) = log p(w, c) / (p(w) p(c))``, which keeps rare words from topping
+    the list. Use the TRAIN pairs. Columns: label, token, count, pmi.
+    """
+    rows = [
+        (label, token)
+        for label, text in zip(pairs["label"], pairs["hypothesis"], strict=True)
+        for token in set(tokenizer.tokenize(text))
+    ]
+    counts = pd.crosstab(
+        pd.Series([t for _, t in rows], name="token"), pd.Series([LABELS[c] for c, _ in rows], name="label")
+    )
+    counts = counts.reindex(columns=LABELS, fill_value=0)
+    smoothed = counts + smoothing
+    total = smoothed.to_numpy().sum()
+    p_joint = smoothed / total
+    p_word = smoothed.sum(axis=1) / total
+    p_label = smoothed.sum(axis=0) / total
+    pmi = np.log(p_joint.div(p_word, axis=0).div(p_label, axis=1))
+    out = []
+    for label in LABELS:
+        top = pmi[label].sort_values(ascending=False).head(top_n)
+        out.append(
+            pd.DataFrame(
+                {
+                    "label": label,
+                    "token": top.index,
+                    "count": counts.loc[top.index, label].to_numpy(),
+                    "pmi": top.to_numpy(),
+                }
+            )
+        )
+    return pd.concat(out, ignore_index=True)
+
+
+def cue_features(pairs: pd.DataFrame, tokenizer: Tokenizer, cues: pd.DataFrame) -> pd.DataFrame:
+    """Per item id: which labels' cues its hypothesis contains, and whether they match its gold label.
+
+    ``cue:<label>`` is 1 if the hypothesis has one of that label's ``cues`` words (a purpose clause counts as
+    a neutral cue). ``cue_gold``: it has a cue for its gold label (the shortcut points the right way);
+    ``cue_misleading``: it has a cue for another label (the shortcut points the wrong way). An item can have both.
+    """
+    words = {label: set(cues.loc[cues["label"] == label, "token"]) for label in LABELS}
+    tokens = [set(t) for t in tokenizer.tokenize_many(pairs["hypothesis"])]
+    purpose = pairs["hypothesis"].str.lower().str.contains(PURPOSE).to_numpy()
+    has = {label: np.array([bool(t & words[label]) for t in tokens]) for label in LABELS}
+    has["neutral"] = has["neutral"] | purpose
+    gold = pairs["label"].to_numpy()
+    matrix = np.stack([has[label] for label in LABELS], axis=1)  # (items, labels)
+    rows = np.arange(len(gold))
+    cue_gold = matrix[rows, gold]
+    others = matrix.copy()
+    others[rows, gold] = False
+    out = {f"cue:{label}": has[label].astype(int) for label in LABELS}
+    out |= {
+        "purpose": purpose.astype(int),
+        "cue_gold": cue_gold.astype(int),
+        "cue_misleading": others.any(axis=1).astype(int),
+    }
+    return pd.DataFrame(out, index=pd.Index(pairs["id"].to_numpy(), name="id"))
+
+
+def feature_rates_by_label(pairs: pd.DataFrame, features: pd.DataFrame) -> pd.DataFrame:
+    """Per gold label: median hypothesis length and the share of items where each binary feature fires."""
+    df = features.join(
+        pd.Series(pairs["label"].map(lambda i: LABELS[i]).to_numpy(), index=pairs["id"].to_numpy(), name="gold")
+    )
+    binary = [c for c in features.columns if set(features[c].unique()) <= {0, 1}]
+    rates = df.groupby("gold")[binary].mean().reindex(LABELS)
+    rates.insert(0, "median_hypothesis_len", df.groupby("gold")["hypothesis_len"].median().reindex(LABELS))
+    rates.insert(1, "n_items", df.groupby("gold").size().reindex(LABELS))
+    return rates.T
+
+
+def accuracy_by_label(table: pd.DataFrame) -> pd.DataFrame:
+    """Accuracy per system and gold label, averaged over all fold/seed models (rows: system, columns: label)."""
+    out = table.groupby(["system", "label"])["correct"].mean().unstack()
+    out.columns = [LABELS[c] for c in out.columns]
+    out["all"] = table.groupby("system")["correct"].mean()
+    return out.reindex(table.drop_duplicates("system_id").sort_values("system_id")["system"])
 
 
 def analysis_ids(pairs: pd.DataFrame, n_per_label: int = 300, seed: int = 0) -> np.ndarray:
@@ -120,15 +226,18 @@ def accuracy_by_bin(table: pd.DataFrame, features: pd.DataFrame, feature: str, q
 def design_matrix(
     table: pd.DataFrame, features: pd.DataFrame, feature_cols: list[str]
 ) -> tuple[np.ndarray, list[str]]:
-    """Features for the BDA model, one row per table row: predicted-label one-hot, then ``feature_cols``.
+    """Features for the BDA model, one row per table row: gold-label indicators, then ``feature_cols``.
 
-    The one-hot lets a system be better or worse depending on what it predicts (as in the tutorial).
+    ``label:neutral`` and ``label:contradiction`` (entailment is the reference, absorbed by the intercept) let a
+    system be better or worse on some gold labels. V1 used the tutorial's one-hot of the *predicted* label; that
+    is a system output rather than a property of the input, and a full one-hot is collinear with the intercept.
     """
     joined = table.join(features[feature_cols], on="id")
     if joined[feature_cols].isna().any().any():
         raise ValueError("some table ids have no features")
-    X = np.hstack([one_hot(joined["pred"].to_numpy(), len(LABELS)), joined[feature_cols].to_numpy(dtype=float)])
-    names = [f"pred:{name}" for name in LABELS] + list(feature_cols)
+    gold = one_hot(joined["label"].to_numpy(), len(LABELS))[:, 1:]
+    X = np.hstack([gold, joined[feature_cols].to_numpy(dtype=float)])
+    names = [f"label:{name}" for name in LABELS[1:]] + list(feature_cols)
     return X, names
 
 

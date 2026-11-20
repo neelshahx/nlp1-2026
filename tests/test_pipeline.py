@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from nli.compare import compare
+from nli.compare import compare, restrict_seeds, seed_fold_spread
 from nli.ensemble import combine, ensemble_on_dev, ensemble_on_split
 from nli.experiment import EXAMPLE_CONFIG, experiment_id, grid, predict_split, run_experiment, validate_config
 from nli.store import Result, load_results, read_fold_predictions
@@ -87,3 +87,29 @@ def test_compare_is_paired_and_reports_probabilities():
     assert abs(out["p_left"] + out["p_rope"] + out["p_right"] - 1) < 1e-6
     with pytest.raises(ValueError):
         compare(a, _fake_result("c", [0.6, 0.6, 0.6, 0.6, 0.6], seeds=(0, 1)))
+
+
+def test_restrict_seeds_makes_results_pairable():
+    a = _fake_result("a", [0.70, 0.72, 0.71, 0.69, 0.73])
+    two = _fake_result("two", [0.60, 0.63, 0.61, 0.58, 0.62], seeds=(0, 1))
+    one = restrict_seeds(two, [0])
+    assert one.seeds == [0] and len(one.per_fold("accuracy")) == 5
+    assert compare(a, one, rope=0.01)["runs"] == 1
+    with pytest.raises(ValueError):
+        restrict_seeds(two, [2])
+
+
+def test_seed_fold_spread_separates_seed_noise_from_fold_noise():
+    rows = [
+        {"seed": s, "fold": f, "metric": "accuracy", "value": v}
+        for f, base in enumerate([0.70, 0.72, 0.71, 0.69, 0.73])
+        for s, v in enumerate([base - 0.01, base + 0.01])  # seeds always 2 points apart on the same fold
+    ]
+    cfg = validate_config({**EXAMPLE_CONFIG, "name": "x", "model_seeds": [0, 1]})
+    out = seed_fold_spread(Result("x", cfg, pd.DataFrame(rows)))
+    assert out["seeds"] == 2
+    assert abs(out["max_seed_gap"] - 0.02) < 1e-9
+    assert abs(out["sd_seed"] - np.sqrt(0.0002)) < 1e-9  # var of {b-0.01, b+0.01} with ddof=1 is 0.0002
+    assert abs(out["sd_fold"] - np.std([0.70, 0.72, 0.71, 0.69, 0.73], ddof=1)) < 1e-9
+    with pytest.raises(ValueError):
+        seed_fold_spread(_fake_result("one", [0.7] * 5))

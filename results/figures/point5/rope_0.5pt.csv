@@ -1,0 +1,13 @@
+question,left,right,runs,mean_diff,p_left,p_rope,p_right
+A: C=0.1 vs C=1 (binary),snli-bow-loglin-C=0.1-binary=True-2187c5b0,snli-bow-loglin-C=1.0-binary=True-6ecd012a,1,0.0012742166163981494,0.00012492234864649253,0.999752623122102,0.00012245452925152556
+A: binary vs counts (C=0.1),snli-bow-loglin-C=0.1-binary=True-2187c5b0,snli-bow-loglin-C=0.1-binary=False-84c1fe55,1,0.03986409585805539,6.898692872010163e-06,0.9999894506200746,3.6506870534358526e-06
+B: BPE 8k vs 16k,snli-bow-loglin-C=1.0-binary=False-cb2a35a9,snli-bow-loglin-vocab_size=16000-47cda660,1,0.30598831888341005,0.03011453743512189,0.9696762131038645,0.0002092494610135276
+B: premise + hypothesis vs hypothesis only,snli-bow-loglin-C=1.0-binary=False-cb2a35a9,snli-hyp-only-bow-loglin-8059a0af,1,0.4565254444461764,0.3410450511624209,0.6586388025881658,0.00031614624941334046
+B: concat vs joint pairing,snli-bow-loglin-C=0.1-binary=True-2187c5b0,snli-bow-loglin-pairing=joint-4b3beda3,1,5.455005755303155,0.9999997964017311,1.0595236121790919e-07,9.764590769290038e-08
+C: MLP 512 vs 128,snli-bow-mlp-hidden_dim=512-n_blocks=0-38b6d7fe,snli-bow-mlp-hidden_dim=128-n_blocks=0-f8c85fe5,2,0.24100393412742616,0.058046516906772906,0.9415708701291228,0.0003826129641043563
+C: 2 residual blocks vs 0,snli-bow-mlp-hidden_dim=128-n_blocks=2-fc266eb2,snli-bow-mlp-hidden_dim=128-n_blocks=0-f8c85fe5,2,-0.1883085175811039,0.0006694045538416768,0.9652246637871269,0.03410593165903142
+A to C: MLP 512 vs log-linear,snli-bow-mlp-hidden_dim=512-n_blocks=0-38b6d7fe,snli-bow-loglin-C=0.1-binary=True-2187c5b0,1,8.406766756508421,0.9999998784044004,4.6059111413754295e-08,7.553648817548719e-08
+C to D: Bowman sum (trainable) vs MLP 512,snli-glove-bowman-sum-freeze_embeddings=False-efb8a605,snli-bow-mlp-hidden_dim=512-n_blocks=0-38b6d7fe,2,-0.5440842204478824,0.08506275396093271,0.3905249456009877,0.5244123004380795
+D: LSTM vs sum (trainable),snli-glove-bowman-lstm-freeze_embeddings=False-2e249164,snli-glove-bowman-sum-freeze_embeddings=False-efb8a605,2,3.2314490386030403,0.997135955000694,0.0024523459684004933,0.0004116990309055435
+"D: sum, trainable vs frozen GloVe",snli-glove-bowman-sum-freeze_embeddings=False-efb8a605,snli-glove-bowman-sum-freeze_embeddings=True-c193df9d,2,2.2750693491178753,0.981985664861951,0.016059064983078408,0.0019552701549705453
+"D: LSTM, trainable vs frozen GloVe",snli-glove-bowman-lstm-freeze_embeddings=False-2e249164,snli-glove-bowman-lstm-freeze_embeddings=True-a6fcfc57,2,0.3063520649356555,0.39981386827826376,0.44789585494274486,0.15229027677899143
