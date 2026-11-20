@@ -1,6 +1,7 @@
 import copy
 
 import numpy as np
+import pandas as pd
 import pytest
 import torch
 
@@ -88,3 +89,6 @@ def test_runs_through_the_fold_pipeline(glove_file, tmp_path, encoder):
     cfg["model"] = {"kind": "bowman", "encoder": encoder, **SMALL}
     result = run_experiment(cfg, tmp_path, verbose=False)
     assert len(result.per_fold("accuracy")) == cfg["dataset"]["k"]
+    history = pd.read_csv(tmp_path / "results" / result.id / "history.csv")
+    assert set(history["fold"]) == set(range(cfg["dataset"]["k"])) and history["epoch"].min() == 1
+    assert {"seed", "train_loss", "val_accuracy"} <= set(history.columns)

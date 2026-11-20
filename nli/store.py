@@ -5,6 +5,7 @@ Layout, relative to ``root`` (the repo by default)::
     results/index.csv                               one row per Experiment ever run
     results/<id>/config.json
     results/<id>/folds.csv                          long: seed, fold, metric, value
+    results/<id>/history.csv                        per-epoch training log: seed, fold, epoch, train_*, val_*, secs
     results/<id>/predictions/seed-S-fold-K-<split>.csv   id, label, p_entailment, p_neutral, p_contradiction
     models/<id>/seed-S-fold-K.<ext>                 fitted Fold models
     models/tokenizers/<dataset>-<tokenizer id>.<ext>
@@ -87,6 +88,13 @@ def write_result(root: Path, result: Result) -> None:
     (d / "config.json").write_text(json.dumps(result.config, indent=2))
     result.scores.to_csv(d / "folds.csv", index=False)
     _append_index(root, result)
+
+
+def write_history(root: Path, id: str, history: pd.DataFrame) -> None:
+    """Per-epoch training log of every (seed, fold) model; small, so it is committed alongside folds.csv."""
+    d = results_dir(root, id)
+    d.mkdir(parents=True, exist_ok=True)
+    history.to_csv(d / "history.csv", index=False)
 
 
 def write_predictions(

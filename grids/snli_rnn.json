@@ -58,5 +58,17 @@
       "model_seeds": [0, 1]
     },
     "overrides": {"model.freeze_embeddings": [false, true]}
+    },
+  "bowman-bert": {
+    "note": "Frozen bert-base-uncased mean-pooled sentence vectors (premise and hypothesis encoded separately) -> Bowman head: shared 768->100 tanh projection, combiner, 3x200 tanh MLP, AdaDelta. Combiner [u,v] vs [u,v,|u-v|,u*v] vs hypothesis-only.",
+    "base": {
+      "name": "snli-bert-bowman",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "wordpiece"},
+      "representation": {"kind": "bert", "pairing": "sentences"},
+      "model": {"kind": "bowman_bert"},
+      "model_seeds": [0, 1]
+    },
+    "overrides": {"model.combiner": ["concat", "matching", "hypothesis_only"]}
   }
 }

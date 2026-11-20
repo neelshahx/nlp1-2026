@@ -1,7 +1,11 @@
 """Frozen BERT sentence embeddings (mean pooling over real tokens). Extracted from emil/bert-encoder.py.
 
-The encoder has its own WordPiece tokenizer.
+The encoder has its own WordPiece tokenizer (use the placeholder ``wordpiece`` tokenizer kind in the config).
+Premise and hypothesis are encoded separately, never as one ``[CLS] P [SEP] H [SEP]`` input, so BERT stays a
+sentence encoder: the two sentences only meet in the classifier.
 """
+
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -10,7 +14,7 @@ import torch
 from ..tokenizers import Tokenizer
 from .base import Features, Representation
 
-BERT_PAIRINGS = ("concat", "matching", "hypothesis_only")
+BERT_PAIRINGS = ("concat", "matching", "hypothesis_only", "sentences")
 
 
 def pick_device(name: str = "auto") -> str:
@@ -62,6 +66,20 @@ class BertEncoder:
         return emb[[index[s] for s in sentences]]
 
 
+@dataclass
+class SentenceVectorPairs:
+    """Premise and hypothesis sentence vectors, ``(n, hidden)`` each, kept apart for a model that combines them."""
+
+    premise: np.ndarray
+    hypothesis: np.ndarray
+
+    def __len__(self) -> int:
+        return len(self.premise)
+
+    def take(self, idx) -> "SentenceVectorPairs":
+        return SentenceVectorPairs(self.premise[idx], self.hypothesis[idx])
+
+
 def matching_features(u: np.ndarray, v: np.ndarray) -> np.ndarray:
     """``[u, v, |u - v|, u * v]`` (Mou et al. 2016 heuristic matching), float32."""
     u, v = u.astype(np.float32), v.astype(np.float32)
@@ -85,7 +103,9 @@ class BertRepresentation(Representation):
         batch_size: int = 256,
         device: str = "auto",
     ):
-        """``pairing``: ``concat`` = [u, v], ``matching`` = [u, v, |u-v|, u*v], ``hypothesis_only`` = v."""
+        """``pairing``: ``concat`` = [u, v], ``matching`` = [u, v, |u-v|, u*v], ``hypothesis_only`` = v (dense
+        matrices for feature models), or ``sentences`` = u and v kept apart (``SentenceVectorPairs``, for
+        ``bowman_bert``, which projects and combines them itself)."""
         super().__init__(tokenizer)
         if pairing not in BERT_PAIRINGS:
             raise ValueError(f"unknown pairing {pairing!r}; choose from {BERT_PAIRINGS}")
@@ -120,6 +140,8 @@ class BertRepresentation(Representation):
         if self.pairing == "hypothesis_only":
             return Features(v.astype(np.float32))
         u = self.encode(pairs["premise"].tolist())
+        if self.pairing == "sentences":
+            return Features(SentenceVectorPairs(u, v), n_rows=len(pairs), dim=None)
         X = matching_features(u, v) if self.pairing == "matching" else np.concatenate([u, v], axis=1, dtype=np.float32)
         return Features(X)
 

@@ -26,6 +26,7 @@ from .store import (
     read_predictions,
     results_dir,
     tokenizers_dir,
+    write_history,
     write_predictions,
     write_result,
 )
@@ -152,11 +153,13 @@ def run_experiment(config: dict, root: Path | str = ".", force: bool = False, ve
     folds = make_folds(y, cfg["dataset"]["k"], cfg["dataset"]["data_seed"])
     models_dir(root, eid).mkdir(parents=True, exist_ok=True)
 
-    rows = []
+    rows, history = [], []
     for seed in cfg["model_seeds"]:
         for fold_i, (tr, ho) in enumerate(folds):
             rep = build_representation(cfg["representation"], tokenizer).fit(train.iloc[tr])
             model = build_model(cfg["model"], seed=seed).fit(rep.transform(train.iloc[tr]), y[tr])
+            # models trained by epochs (mlp, bowman) keep one dict per epoch; others have none
+            history.extend({"seed": seed, "fold": fold_i, **e} for e in getattr(model, "history", []))
 
             probs = model.predict_proba(rep.transform(train.iloc[ho]))
             fold_scores = score(y[ho], probs, tuple(cfg["metrics"]))
@@ -172,6 +175,8 @@ def run_experiment(config: dict, root: Path | str = ".", force: bool = False, ve
                 )
 
     result = Result(eid, cfg, pd.DataFrame(rows))
+    if history:
+        write_history(root, eid, pd.DataFrame(history))
     write_result(root, result)
     return result
 

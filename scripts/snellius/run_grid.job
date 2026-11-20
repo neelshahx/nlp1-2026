@@ -13,6 +13,7 @@
 #        UV_PYTHON_INSTALL_DIR=$PWD/.uv-python uv sync
 #      so the venv and the Python it links to both live in the repo, visible from compute nodes
 #   3. warm the HF dataset cache:  .venv/bin/python -c "from nli.data import load_snli; load_snli()"
+#      and BERT (bowman-bert grid): .venv/bin/python -c "from transformers import AutoModel, AutoTokenizer as T; T.from_pretrained('bert-base-uncased'); AutoModel.from_pretrained('bert-base-uncased')"
 #   4. check it on a compute node before the real run:
 #        srun --partition=gpu_mig --gpus=1 --time=00:05:00 .venv/bin/python -c "import torch; print(torch.cuda.is_available())"
 #
@@ -35,6 +36,7 @@ set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 
 export HF_DATASETS_OFFLINE=1         # use the cache warmed on the login node
+export HF_HUB_OFFLINE=1              # same for BERT weights (warm: see step 3 above)
 export PYTHONUNBUFFERED=1
 nvidia-smi || true
 

@@ -179,6 +179,10 @@ class BowmanModel(Model):
         )
         return net.to(pick_device(self.device))
 
+    def _build_for(self, X: SequencePairs) -> BowmanNet:
+        """The net for this training payload; subclasses with other payloads override this."""
+        return self._build(X.embeddings)
+
     def _batches(self, X: SequencePairs, order: np.ndarray, size: int):
         dev = pick_device(self.device)
         for i in range(0, len(order), size):
@@ -203,7 +207,7 @@ class BowmanModel(Model):
         rng = np.random.default_rng(self.seed)
         X: SequencePairs = features.payload
         y = np.asarray(labels)
-        self._net = self._build(X.embeddings)
+        self._net = self._build_for(X)
         self.history = []
 
         order = rng.permutation(len(y))
