@@ -1,0 +1,79 @@
+{
+ "final-gru": {
+  "note": "Final evaluation: best RNN, trainable GloVe GRU; same config (and id) as the CV run, refit on full train.",
+  "base": {
+   "name": "snli-glove-bowman-gru-freeze_embeddings=False",
+   "dataset": {
+    "name": "snli",
+    "k": 5
+   },
+   "tokenizer": {
+    "kind": "treebank"
+   },
+   "representation": {
+    "kind": "glove",
+    "dim": 300
+   },
+   "model": {
+    "kind": "bowman",
+    "encoder": "gru",
+    "freeze_embeddings": false
+   },
+   "model_seeds": [
+    0,
+    1
+   ]
+  }
+ },
+ "final-max": {
+  "note": "Final evaluation: best embed-and-pool, trainable GloVe max pool; same config (and id) as the CV run, refit on full train.",
+  "base": {
+   "name": "snli-glove-bowman-max-freeze_embeddings=False",
+   "dataset": {
+    "name": "snli",
+    "k": 5
+   },
+   "tokenizer": {
+    "kind": "treebank"
+   },
+   "representation": {
+    "kind": "glove",
+    "dim": 300
+   },
+   "model": {
+    "kind": "bowman",
+    "encoder": "max",
+    "freeze_embeddings": false
+   },
+   "model_seeds": [
+    0,
+    1
+   ]
+  }
+ },
+ "final-bert-matching": {
+  "note": "Final evaluation: best BERT, frozen BERT sentence vectors + matching combiner; same config (and id) as the CV run, refit on full train.",
+  "base": {
+   "name": "snli-bert-bowman-combiner=matching",
+   "dataset": {
+    "name": "snli",
+    "k": 5
+   },
+   "tokenizer": {
+    "kind": "wordpiece"
+   },
+   "representation": {
+    "kind": "bert",
+    "pairing": "sentences"
+   },
+   "model": {
+    "kind": "bowman_bert",
+    "combiner": "matching"
+   },
+   "model_seeds": [
+    0,
+    1
+   ]
+  }
+ }
+}

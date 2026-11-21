@@ -1,0 +1,68 @@
+{
+ "lc-max": {
+  "note": "Learning curve, embed-and-pool max (trainable GloVe 300d): each fold's train part subsampled (stratified, nested, same rows for every model at a fraction); held-out fold and dev unchanged. 100% = the CV run snli-glove-bowman-max-freeze_embeddings=False.",
+  "base": {
+   "name": "snli-glove-bowman-max-lc",
+   "dataset": {
+    "name": "snli",
+    "k": 5
+   },
+   "tokenizer": {
+    "kind": "treebank"
+   },
+   "representation": {
+    "kind": "glove",
+    "dim": 300
+   },
+   "model": {
+    "kind": "bowman",
+    "encoder": "max",
+    "freeze_embeddings": false
+   },
+   "model_seeds": [
+    0,
+    1
+   ]
+  },
+  "overrides": {
+   "dataset.train_fraction": [
+    0.1,
+    0.25,
+    0.5
+   ]
+  }
+ },
+ "lc-gru": {
+  "note": "Learning curve, GRU (trainable GloVe 300d): each fold's train part subsampled (stratified, nested, same rows for every model at a fraction); held-out fold and dev unchanged. 100% = the CV run snli-glove-bowman-gru-freeze_embeddings=False.",
+  "base": {
+   "name": "snli-glove-bowman-gru-lc",
+   "dataset": {
+    "name": "snli",
+    "k": 5
+   },
+   "tokenizer": {
+    "kind": "treebank"
+   },
+   "representation": {
+    "kind": "glove",
+    "dim": 300
+   },
+   "model": {
+    "kind": "bowman",
+    "encoder": "gru",
+    "freeze_embeddings": false
+   },
+   "model_seeds": [
+    0,
+    1
+   ]
+  },
+  "overrides": {
+   "dataset.train_fraction": [
+    0.1,
+    0.25,
+    0.5
+   ]
+  }
+ }
+}

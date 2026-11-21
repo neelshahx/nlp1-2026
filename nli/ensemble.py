@@ -3,10 +3,11 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from .data import LABELS
 from .metrics import score
-from .store import Result, read_predictions
+from .store import Result, read_final_predictions, read_predictions
 
 COMBINERS = ("mean_proba", "majority")
 
@@ -50,3 +51,76 @@ def ensemble_on_dev(
     result: Result, combiner: str = "mean_proba", root: Path | str = ".", seeds: list[int] | None = None
 ) -> dict[str, float]:
     return ensemble_on_split(result, "dev", combiner, root, seeds)
+
+
+# --- across configs -----------------------------------------------------------
+
+
+def _probs(frames: list) -> list[np.ndarray]:
+    ids = frames[0]["id"].to_numpy()
+    for df in frames[1:]:
+        if not np.array_equal(df["id"].to_numpy(), ids):
+            raise ValueError("ensemble members predicted different rows (ids differ); folds must be paired")
+    return [df[[f"p_{n}" for n in LABELS]].to_numpy() for df in frames]
+
+
+def _check_paired(results: list[Result]) -> None:
+    keys = {r.folds_key for r in results}
+    if len(keys) != 1:
+        raise ValueError(f"results use different folds {keys}; a CV ensemble needs the same folds")
+
+
+def cv_ensemble(
+    results: list[Result], combiner: str = "mean_proba", root: Path | str = ".", seeds: list[int] | None = None
+) -> pd.DataFrame:
+    """Cross-validated score of an Ensemble over configs (and seeds): one row per (fold, metric).
+
+    For held-out fold K the members are fold-K models of every Result and seed, all trained without fold K, so
+    the score is a fair CV estimate paired fold by fold with the single models'. Long format with ``seed`` 0
+    (one combined model per fold), so ``Result``/``per_fold`` read it like a single-seed run.
+    """
+    _check_paired(results)
+    rows = []
+    for fold in range(results[0].k):
+        frames = [
+            read_predictions(root, r.id, s, fold, "heldout")
+            for r in results
+            for s in (r.seeds if seeds is None else seeds)
+        ]
+        probs = combine(_probs(frames), combiner)
+        for m, v in score(frames[0]["label"].to_numpy(), probs, tuple(results[0].config["metrics"])).items():
+            rows.append({"seed": 0, "fold": fold, "metric": m, "value": v})
+    return pd.DataFrame(rows)
+
+
+def split_ensemble(
+    results: list[Result],
+    split: str,
+    combiner: str = "mean_proba",
+    root: Path | str = ".",
+    seeds: list[int] | None = None,
+) -> dict[str, float]:
+    """Score every Fold model of every Result (all seeds by default), combined, on a split (dev; test only for the final evaluation)."""
+    frames = [
+        read_predictions(root, r.id, s, f, split)
+        for r in results
+        for s in (r.seeds if seeds is None else seeds)
+        for f in range(r.k)
+    ]
+    probs = combine(_probs(frames), combiner)
+    return score(frames[0]["label"].to_numpy(), probs, tuple(results[0].config["metrics"]))
+
+
+def final_ensemble(
+    results: list[Result],
+    split: str,
+    combiner: str = "mean_proba",
+    root: Path | str = ".",
+    seeds: list[int] | None = None,
+) -> dict[str, float]:
+    """Score the full-train refits (``experiment.run_final``) of every Result and seed, combined, on a split."""
+    frames = [
+        read_final_predictions(root, r.id, s, split) for r in results for s in (r.seeds if seeds is None else seeds)
+    ]
+    probs = combine(_probs(frames), combiner)
+    return score(frames[0]["label"].to_numpy(), probs, tuple(results[0].config["metrics"]))

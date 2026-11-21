@@ -7,7 +7,10 @@ Layout, relative to ``root`` (the repo by default)::
     results/<id>/folds.csv                          long: seed, fold, metric, value
     results/<id>/history.csv                        per-epoch training log: seed, fold, epoch, train_*, val_*, secs
     results/<id>/predictions/seed-S-fold-K-<split>.csv   id, label, p_entailment, p_neutral, p_contradiction
+    results/<id>/final/scores.csv                   full-train refit: seed, split, metric, value
+    results/<id>/final/predictions/seed-S-<split>.csv
     models/<id>/seed-S-fold-K.<ext>                 fitted Fold models
+    models/<id>/final-seed-S.<ext>                  full-train refits
     models/tokenizers/<dataset>-<tokenizer id>.<ext>
 """
 
@@ -71,6 +74,14 @@ def models_dir(root: Path, id: str) -> Path:
     return Path(root) / "models" / id
 
 
+def final_dir(root: Path, id: str) -> Path:
+    return results_dir(root, id) / "final"
+
+
+def final_model_path(root: Path, id: str, seed: int) -> Path:
+    return models_dir(root, id) / f"final-seed-{seed}"
+
+
 def tokenizers_dir(root: Path) -> Path:
     return Path(root) / "models" / "tokenizers"
 
@@ -97,15 +108,24 @@ def write_history(root: Path, id: str, history: pd.DataFrame) -> None:
     history.to_csv(d / "history.csv", index=False)
 
 
-def write_predictions(
-    root: Path, id: str, seed: int, fold: int, split: str, ids: pd.Series, labels: np.ndarray, probs: np.ndarray
-) -> None:
-    d = results_dir(root, id) / "predictions"
-    d.mkdir(parents=True, exist_ok=True)
+def _write_probs(path: Path, ids: pd.Series, labels: np.ndarray, probs: np.ndarray) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(probs, columns=PROB_COLUMNS)
     df.insert(0, "label", labels)
     df.insert(0, "id", ids.to_numpy())
-    df.to_csv(d / f"seed-{seed}-fold-{fold}-{split}.csv", index=False)
+    df.to_csv(path, index=False)
+
+
+def write_predictions(
+    root: Path, id: str, seed: int, fold: int, split: str, ids: pd.Series, labels: np.ndarray, probs: np.ndarray
+) -> None:
+    _write_probs(results_dir(root, id) / "predictions" / f"seed-{seed}-fold-{fold}-{split}.csv", ids, labels, probs)
+
+
+def write_final_predictions(
+    root: Path, id: str, seed: int, split: str, ids: pd.Series, labels: np.ndarray, probs: np.ndarray
+) -> None:
+    _write_probs(final_dir(root, id) / "predictions" / f"seed-{seed}-{split}.csv", ids, labels, probs)
 
 
 def delete_result(root: Path, id: str) -> None:
@@ -190,6 +210,10 @@ def load_results(root: Path = ".") -> pd.DataFrame:
 
 def read_predictions(root: Path, id: str, seed: int, fold: int, split: str) -> pd.DataFrame:
     return pd.read_csv(results_dir(root, id) / "predictions" / f"seed-{seed}-fold-{fold}-{split}.csv")
+
+
+def read_final_predictions(root: Path, id: str, seed: int, split: str) -> pd.DataFrame:
+    return pd.read_csv(final_dir(root, id) / "predictions" / f"seed-{seed}-{split}.csv")
 
 
 def read_fold_predictions(root: Path, result: Result, split: str, seed: int = 0) -> list[pd.DataFrame]:

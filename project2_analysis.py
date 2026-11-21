@@ -12,7 +12,7 @@
 # ---
 
 # %% [markdown]
-# # Project 2, point 6: error analysis with the BDA model (V1.2: + GloVe max pool, BERT)
+# # Project 2, point 6: error analysis with the BDA model (+ GloVe max pool, BERT)
 #
 # Which properties of an SNLI pair predict whether a system classifies it correctly, and do those properties
 # affect different designs differently?
@@ -25,7 +25,7 @@
 #   features: `cue_gold` (the hypothesis has a cue word for its gold label) and `cue_misleading` (it has a cue for
 #   another label). Cue words: top-15 PMI per label on train hypotheses, add-100 smoothing, document counts
 #   (Gururangan et al. 2018); a purpose clause counts as a neutral cue.
-# - **Model:** the tutorial's Bayesian logistic regression; V1.1 conditions on the gold label (`label:neutral`,
+# - **Model:** the tutorial's Bayesian logistic regression; it conditions on the gold label (`label:neutral`,
 #   `label:contradiction`; entailment = reference) instead of the predicted label.
 #
 # Predictions are gitignored and live under different roots; `link_results` gathers them as symlinks in
@@ -47,22 +47,20 @@ from nli.tokenizers import build_tokenizer
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 SYSTEMS = {  # short name -> (experiment id, root holding results/<id>/predictions); the order fixes system ids
-    "hyp-only": ("snli-hyp-only-bow-loglin-8059a0af", "local-runs/regen/snli-hyp-only-bow-loglin-8059a0af"),
-    "bow-loglin": ("snli-bow-loglin-C=0.1-binary=True-2187c5b0", "local-runs"),
-    "mlp": (
-        "snli-bow-mlp-hidden_dim=128-n_blocks=0-f8c85fe5",
-        "local-runs/regen/snli-bow-mlp-hidden_dim=128-n_blocks=0-f8c85fe5",
-    ),
+    "hyp-only": ("snli-hyp-only-bow-loglin-8059a0af", "."),
+    "bow-loglin": ("snli-bow-loglin-C=0.1-binary=True-2187c5b0", "."),
+    "mlp": ("snli-bow-mlp-hidden_dim=128-n_blocks=0-f8c85fe5", "."),
     "sum": ("snli-glove-bowman-sum-freeze_embeddings=False-efb8a605", "."),
     "lstm": ("snli-glove-bowman-lstm-freeze_embeddings=False-2e249164", "."),
-    # V1.2: best embed-and-pool and best BERT (frozen, mean-pooled, matching features)
+    # best embed-and-pool and best BERT (frozen, mean-pooled, matching features)
     "max": ("snli-glove-bowman-max-freeze_embeddings=False-b6d749c2", "."),
     "bert": ("snli-bert-bowman-combiner=matching-0c24c9b3", "."),
+    "gru": ("snli-glove-bowman-gru-freeze_embeddings=False-dc7ea50d", "."),  # best RNN
 }
 FEATURES = ["hypothesis_len", "premise_len", "overlap", "negation", "cue_gold", "cue_misleading"]
 DIFFERENCES = [
     ("bow-loglin", "hyp-only"), ("mlp", "bow-loglin"), ("lstm", "sum"), ("lstm", "bow-loglin"),
-    ("lstm", "max"), ("bert", "lstm"), ("bert", "bow-loglin"),  # V1.2
+    ("lstm", "max"), ("bert", "lstm"), ("bert", "bow-loglin"), ("gru", "max"),
 ]
 FIGURES = Path("results/figures/bda-v1.2")
 FIGURES.mkdir(parents=True, exist_ok=True)
@@ -118,7 +116,7 @@ by_label.round(3)
 binned = {f: analysis.accuracy_by_bin(table, features, f) for f in FEATURES}
 pd.concat([b.assign(feature=f) for f, b in binned.items()]).astype({"bin": str}).to_csv(
     FIGURES / "accuracy_by_bin.csv", index=False
-)  # V1.2: exact numbers for the slides
+)  # exact numbers for the slides
 fig = plotting.plot_accuracy_by_bin(binned)
 fig.savefig(FIGURES / "accuracy_by_bin.png", dpi=150, bbox_inches="tight")
 

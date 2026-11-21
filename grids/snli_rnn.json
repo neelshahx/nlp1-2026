@@ -24,7 +24,7 @@
     "overrides": {"model.freeze_embeddings": [false, true]}
   },
   "bowman-gru": {
-    "note": "E1.1 GRU encoder: Bowman et al. (2015) setup with a 100d GRU (last hidden state) in place of the LSTM, over GloVe 300d; trainable vs frozen embeddings.",
+    "note": "GRU encoder: Bowman et al. (2015) setup with a 100d GRU (last hidden state) in place of the LSTM, over GloVe 300d; trainable vs frozen embeddings.",
     "base": {
       "name": "snli-glove-bowman-gru",
       "dataset": {"name": "snli", "k": 5},
@@ -36,7 +36,7 @@
     "overrides": {"model.freeze_embeddings": [false, true]}
   },
   "bowman-mean": {
-    "note": "E0.1 embed-and-pool pooling ablation: mean of projected GloVe 300d word vectors (vs bowman-sum); trainable vs frozen.",
+    "note": "Embed-and-pool pooling ablation: mean of projected GloVe 300d word vectors (vs bowman-sum); trainable vs frozen.",
     "base": {
       "name": "snli-glove-bowman-mean",
       "dataset": {"name": "snli", "k": 5},
@@ -48,7 +48,7 @@
     "overrides": {"model.freeze_embeddings": [false, true]}
   },
   "bowman-max": {
-    "note": "E0.1 embed-and-pool pooling ablation: max over projected GloVe 300d word vectors (vs bowman-sum); trainable vs frozen.",
+    "note": "Embed-and-pool pooling ablation: max over projected GloVe 300d word vectors (vs bowman-sum); trainable vs frozen.",
     "base": {
       "name": "snli-glove-bowman-max",
       "dataset": {"name": "snli", "k": 5},
@@ -72,7 +72,7 @@
     "overrides": {"model.combiner": ["concat", "matching", "hypothesis_only"]}
   },
   "bowman-max-hyp-only": {
-    "note": "E1.5 artifact baseline for the GloVe models: Bowman max pool (trainable GloVe 300d) on the hypothesis alone; the premise is never encoded. Compare with the concat run of the same encoder.",
+    "note": "Artifact baseline for the GloVe models: Bowman max pool (trainable GloVe 300d) on the hypothesis alone; the premise is never encoded. Compare with the concat run of the same encoder.",
     "base": {
       "name": "snli-glove-bowman-max",
       "dataset": {"name": "snli", "k": 5},
@@ -84,7 +84,7 @@
     "overrides": {"model.combiner": ["hypothesis_only"]}
   },
   "bowman-lstm-hyp-only": {
-    "note": "E1.5 artifact baseline for the GloVe models: Bowman LSTM (trainable GloVe 300d) on the hypothesis alone; the premise is never encoded. Compare with the concat run of the same encoder.",
+    "note": "Artifact baseline for the GloVe models: Bowman LSTM (trainable GloVe 300d) on the hypothesis alone; the premise is never encoded. Compare with the concat run of the same encoder.",
     "base": {
       "name": "snli-glove-bowman-lstm",
       "dataset": {"name": "snli", "k": 5},
