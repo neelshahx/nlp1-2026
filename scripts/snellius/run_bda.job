@@ -1,0 +1,21 @@
+#!/bin/bash
+# Error analysis with the Bayesian logistic regression (project2_analysis.py) on a CPU node: MCMC is too long for the
+# login node's time limit and needs no GPU. Reads saved predictions only; no training.
+# Submit from the repo root on Snellius:
+#   sbatch scripts/snellius/run_bda.job
+#SBATCH --job-name=nli-bda
+#SBATCH --partition=rome             # CPU-only; smallest allocation is 16 cores (1/8 node)
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=01:00:00
+#SBATCH --output=slurm-%x-%j.out
+# #SBATCH --account=<your-budget>    # fill in if you have more than one budget
+
+set -euo pipefail
+cd "$SLURM_SUBMIT_DIR"
+
+export PYTHONUNBUFFERED=1
+export JAX_PLATFORMS=cpu
+
+PY="$SLURM_SUBMIT_DIR/.venv/bin/python"   # built by `uv sync` on the login node
+"$PY" project2_analysis.py
