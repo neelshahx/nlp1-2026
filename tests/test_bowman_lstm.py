@@ -8,7 +8,7 @@ import torch
 from nli import data
 from nli.embeddings import glove_matrix, glove_words
 from nli.experiment import EXAMPLE_CONFIG, run_experiment
-from nli.models.bowman import ENCODERS, BowmanModel, BowmanNet, collate
+from nli.models.bowman import COMBINERS, ENCODERS, BowmanModel, BowmanNet, collate
 from nli.representations import GloveRepresentation
 from nli.tokenizers import TreebankTokenizer
 
@@ -54,6 +54,18 @@ def test_padding_does_not_change_output(encoder):
     assert torch.allclose(alone, logits[:1], atol=1e-6)
 
 
+@pytest.mark.parametrize("combiner", COMBINERS)
+def test_combiner_widths_and_hypothesis_only_ignores_premise(combiner):
+    torch.manual_seed(0)
+    net = BowmanNet(torch.randn(10, 6), encoder="max", combiner=combiner, proj_dim=4, mlp_dim=6, dropout=0.0).eval()
+    p, pl, h, hl = collate([[2, 3], [4, 5, 6, 7]], [[8], [9, 2, 3]])
+    out = net(p, pl, h, hl)
+    assert out.shape == (2, 3)
+    other_p, other_pl, _, _ = collate([[7, 7, 7], [5]], [[8], [9, 2, 3]])
+    changed = not torch.allclose(out, net(other_p, other_pl, h, hl))
+    assert changed == (combiner != "hypothesis_only")
+
+
 def test_glove_representation_vocab_from_fit_rows_only(glove_file):
     toy = data.load_toy()
     rep = GloveRepresentation(TreebankTokenizer(), path=str(glove_file)).fit(toy["train"].iloc[:5])
@@ -80,13 +92,16 @@ def test_fit_predict_save_load(glove_file, tmp_path, freeze):
     assert np.allclose(loaded.predict_proba(rep.transform(toy["dev"])), probs)
 
 
-@pytest.mark.parametrize("encoder", ["sum", "lstm", "gru"])
-def test_runs_through_the_fold_pipeline(glove_file, tmp_path, encoder):
+@pytest.mark.parametrize(
+    "encoder, combiner",
+    [("sum", "concat"), ("lstm", "concat"), ("gru", "concat"), ("max", "matching"), ("max", "hypothesis_only")],
+)
+def test_runs_through_the_fold_pipeline(glove_file, tmp_path, encoder, combiner):
     cfg = copy.deepcopy(EXAMPLE_CONFIG)
-    cfg["name"] = f"toy-glove-bowman-{encoder}"
+    cfg["name"] = f"toy-glove-bowman-{encoder}-{combiner}"
     cfg["tokenizer"] = {"kind": "treebank"}
     cfg["representation"] = {"kind": "glove", "path": str(glove_file)}
-    cfg["model"] = {"kind": "bowman", "encoder": encoder, **SMALL}
+    cfg["model"] = {"kind": "bowman", "encoder": encoder, "combiner": combiner, **SMALL}
     result = run_experiment(cfg, tmp_path, verbose=False)
     assert len(result.per_fold("accuracy")) == cfg["dataset"]["k"]
     history = pd.read_csv(tmp_path / "results" / result.id / "history.csv")

@@ -19,20 +19,7 @@ import torch
 from torch import nn
 
 from ..representations.bert import SentenceVectorPairs
-from .bowman import BowmanModel, pick_device
-
-COMBINERS = ("concat", "matching", "hypothesis_only")
-_WIDTH = {"concat": 2, "matching": 4, "hypothesis_only": 1}  # classifier input = width x proj_dim
-
-
-def combine(u: torch.Tensor, v: torch.Tensor, combiner: str) -> torch.Tensor:
-    if combiner == "concat":
-        return torch.cat([u, v], dim=-1)
-    if combiner == "matching":
-        return torch.cat([u, v, (u - v).abs(), u * v], dim=-1)
-    if combiner == "hypothesis_only":
-        return v
-    raise ValueError(f"unknown combiner {combiner!r}; choose from {COMBINERS}")
+from .bowman import _WIDTH, COMBINERS, BowmanModel, combine, pick_device
 
 
 class BowmanBertNet(nn.Module):

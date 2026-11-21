@@ -116,10 +116,11 @@ L += slide_cmds(s5, artifacts_right([("image", (f"{FIG}/rope_decisions.png", 400
                                      ("table", s5["tables"][0], s5["caps"][1])], y=170))
 L += slide_cmds(s6, artifacts_right([("table", s6["tables"][0], s6["caps"][0]),
                                      ("image", (f"{FIG}/bda_weights.png", 470), s6["caps"][-1])], y=170))
+L += ["tell slide 1"] + text_item(80, 1000, 1000, "Code: https://github.com/neelshahx/nlp1-2026/tree/main/nli", size=18) + ["end tell"]
 for n in range(6):  # slide numbers on content slides (title excluded)
     L += [f"tell slide {n + 2}"] + text_item(1740, 1010, 120, f"{n + 1}/6", size=16) + ["end tell"]
 L += ["repeat with i from 1 to count of slides", 'tell slide i to delete (every text item whose object text is "")', "end repeat",
-      "end tell", f'save d in POSIX file "{OUT}"', "end tell"]
+      "end tell", f'save d in POSIX file "{OUT}"', f'export d to POSIX file "{OUT.replace(".key", ".pdf")}" as PDF', "end tell"]
 open("/tmp/project2_deck.applescript", "w").write("\n".join(L))
 r = subprocess.run(["osascript", "/tmp/project2_deck.applescript"], capture_output=True, text=True)
 print(r.stdout, r.stderr); sys.exit(r.returncode)

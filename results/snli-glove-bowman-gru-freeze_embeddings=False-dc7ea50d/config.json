@@ -1,0 +1,29 @@
+{
+  "name": "snli-glove-bowman-gru-freeze_embeddings=False",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "tokenizer": {
+    "kind": "treebank"
+  },
+  "representation": {
+    "kind": "glove",
+    "dim": 300
+  },
+  "model": {
+    "kind": "bowman",
+    "encoder": "gru",
+    "freeze_embeddings": false
+  },
+  "model_seeds": [
+    0,
+    1
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}

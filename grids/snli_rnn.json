@@ -70,5 +70,29 @@
       "model_seeds": [0, 1]
     },
     "overrides": {"model.combiner": ["concat", "matching", "hypothesis_only"]}
+  },
+  "bowman-max-hyp-only": {
+    "note": "E1.5 artifact baseline for the GloVe models: Bowman max pool (trainable GloVe 300d) on the hypothesis alone; the premise is never encoded. Compare with the concat run of the same encoder.",
+    "base": {
+      "name": "snli-glove-bowman-max",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "treebank"},
+      "representation": {"kind": "glove", "dim": 300},
+      "model": {"kind": "bowman", "encoder": "max", "freeze_embeddings": false},
+      "model_seeds": [0, 1]
+    },
+    "overrides": {"model.combiner": ["hypothesis_only"]}
+  },
+  "bowman-lstm-hyp-only": {
+    "note": "E1.5 artifact baseline for the GloVe models: Bowman LSTM (trainable GloVe 300d) on the hypothesis alone; the premise is never encoded. Compare with the concat run of the same encoder.",
+    "base": {
+      "name": "snli-glove-bowman-lstm",
+      "dataset": {"name": "snli", "k": 5},
+      "tokenizer": {"kind": "treebank"},
+      "representation": {"kind": "glove", "dim": 300},
+      "model": {"kind": "bowman", "encoder": "lstm", "freeze_embeddings": false},
+      "model_seeds": [0, 1]
+    },
+    "overrides": {"model.combiner": ["hypothesis_only"]}
   }
 }

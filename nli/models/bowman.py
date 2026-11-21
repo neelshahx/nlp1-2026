@@ -10,6 +10,11 @@ sentence encoder with shared weights for premise and hypothesis -> [premise; hyp
 - ``sum``: sum of projected word vectors (the paper's 100d sum-of-words embed-and-pool baseline)
 - ``mean`` / ``max``: other pooling choices over the same projected word vectors
 
+``combiner`` builds the classifier input from the sentence vectors u (premise) and v (hypothesis):
+- ``concat``: [u, v] (Bowman's)
+- ``matching``: [u, v, |u - v|, u * v] (Mou et al. 2016; InferSent)
+- ``hypothesis_only``: v (artifact baseline: the premise is never encoded)
+
 Consumes ``SequencePairs`` Features from the ``glove`` Representation.
 """
 
@@ -27,7 +32,21 @@ from ..representations.glove import PAD_IDX, SequencePairs
 from .base import Model
 
 ENCODERS = ("lstm", "gru", "sum", "mean", "max")
+COMBINERS = ("concat", "matching", "hypothesis_only")
+_WIDTH = {"concat": 2, "matching": 4, "hypothesis_only": 1}  # classifier input = width x sentence dim
 EVAL_BATCH = 1024  # pairs per forward pass when no gradients are needed; only bounds memory
+
+
+def combine(u: torch.Tensor | None, v: torch.Tensor, combiner: str) -> torch.Tensor:
+    """Classifier input from premise vector u and hypothesis vector v; u may be None for ``hypothesis_only``."""
+    if combiner == "hypothesis_only":
+        return v
+    assert u is not None, f"combiner {combiner!r} needs the premise vector"
+    if combiner == "concat":
+        return torch.cat([u, v], dim=-1)
+    if combiner == "matching":
+        return torch.cat([u, v, (u - v).abs(), u * v], dim=-1)
+    raise ValueError(f"unknown combiner {combiner!r}; choose from {COMBINERS}")
 
 
 class BowmanNet(nn.Module):
@@ -35,6 +54,7 @@ class BowmanNet(nn.Module):
         self,
         embeddings: torch.Tensor,  # (V, E) initial word vectors
         encoder: str = "lstm",
+        combiner: str = "concat",
         pad_idx: int = PAD_IDX,
         proj_dim: int = 100,
         hidden_dim: int = 100,
@@ -47,7 +67,10 @@ class BowmanNet(nn.Module):
         super().__init__()
         if encoder not in ENCODERS:
             raise ValueError(f"unknown encoder {encoder!r}; choose from {ENCODERS}")
+        if combiner not in COMBINERS:
+            raise ValueError(f"unknown combiner {combiner!r}; choose from {COMBINERS}")
         self.encoder = encoder
+        self.combiner = combiner
         self.pad_idx = pad_idx
         # clone: from_pretrained shares storage, so fine-tuning would otherwise rewrite the caller's matrix
         self.embed = nn.Embedding.from_pretrained(embeddings.clone(), freeze=freeze_embeddings, padding_idx=pad_idx)
@@ -59,7 +82,7 @@ class BowmanNet(nn.Module):
         sent_dim = hidden_dim if encoder in ["lstm", "gru"] else proj_dim
         self.drop = nn.Dropout(dropout)
         layers: list[nn.Module] = []
-        in_dim = 2 * sent_dim
+        in_dim = _WIDTH[combiner] * sent_dim
         for _ in range(n_layers_mlp):
             layers += [nn.Linear(in_dim, mlp_dim), nn.Tanh(), nn.Dropout(dropout)]
             in_dim = mlp_dim
@@ -87,9 +110,9 @@ class BowmanNet(nn.Module):
         return summed if self.encoder == "sum" else summed / lengths.to(x.device).unsqueeze(-1).clamp(min=1)
 
     def forward(self, p_ids, p_len, h_ids, h_len) -> torch.Tensor:
-        u = self.encode(p_ids, p_len)
+        u = None if self.combiner == "hypothesis_only" else self.encode(p_ids, p_len)
         v = self.encode(h_ids, h_len)
-        return self.mlp(torch.cat([u, v], dim=-1))  # (B, 3) logits
+        return self.mlp(combine(u, v, self.combiner))  # (B, 3) logits
 
 
 def collate(premise: list[list[int]], hypothesis: list[list[int]], pad_idx: int = PAD_IDX):
@@ -118,6 +141,7 @@ class BowmanModel(Model):
         self,
         seed: int = 0,
         encoder: str = "lstm",
+        combiner: str = "concat",
         freeze_embeddings: bool = False,
         proj_dim: int = 100,
         hidden_dim: int = 100,
@@ -139,7 +163,10 @@ class BowmanModel(Model):
         super().__init__(seed)
         if encoder not in ENCODERS:
             raise ValueError(f"unknown encoder {encoder!r}; choose from {ENCODERS}")
+        if combiner not in COMBINERS:
+            raise ValueError(f"unknown combiner {combiner!r}; choose from {COMBINERS}")
         self.encoder = encoder
+        self.combiner = combiner
         self.freeze_embeddings = freeze_embeddings
         self.proj_dim = proj_dim
         self.hidden_dim = hidden_dim
@@ -160,7 +187,7 @@ class BowmanModel(Model):
 
     def _hyperparameters(self) -> dict:
         keys = (
-            "seed encoder freeze_embeddings proj_dim hidden_dim mlp_dim n_layers_mlp dropout batch_size "
+            "seed encoder combiner freeze_embeddings proj_dim hidden_dim mlp_dim n_layers_mlp dropout batch_size "
             "learning_rate weight_decay num_epochs validation_fraction patience device"
         ).split()
         return {k: getattr(self, k) for k in keys}
@@ -170,6 +197,7 @@ class BowmanModel(Model):
         net = BowmanNet(
             embeddings,
             encoder=self.encoder,
+            combiner=self.combiner,
             proj_dim=self.proj_dim,
             hidden_dim=self.hidden_dim,
             mlp_dim=self.mlp_dim,
