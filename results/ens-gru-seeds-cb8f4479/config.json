@@ -1,0 +1,27 @@
+{
+  "name": "ens-gru-seeds",
+  "members": [
+    "snli-glove-bowman-gru-freeze_embeddings=False-dc7ea50d"
+  ],
+  "member_seeds": {
+    "snli-glove-bowman-gru-freeze_embeddings=False-dc7ea50d": [
+      0,
+      1
+    ]
+  },
+  "combiner": "mean_proba",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ],
+  "note": "folds.csv: per held-out fold, every member config x seed combined (seed 0 = the combined model)"
+}

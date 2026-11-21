@@ -1,0 +1,27 @@
+{
+  "name": "ens-bert_match-seeds",
+  "members": [
+    "snli-bert-bowman-combiner=matching-0c24c9b3"
+  ],
+  "member_seeds": {
+    "snli-bert-bowman-combiner=matching-0c24c9b3": [
+      0,
+      1
+    ]
+  },
+  "combiner": "mean_proba",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli"
+  },
+  "model_seeds": [
+    0
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ],
+  "note": "folds.csv: per held-out fold, every member config x seed combined (seed 0 = the combined model)"
+}

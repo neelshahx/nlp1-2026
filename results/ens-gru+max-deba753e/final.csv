@@ -1,0 +1,5 @@
+split,metric,value
+dev,accuracy,0.801869538711644
+dev,macro_f1,0.8006704637380517
+test,accuracy,0.8034405537459284
+test,macro_f1,0.802108746524301

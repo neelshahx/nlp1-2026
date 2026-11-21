@@ -1,0 +1,30 @@
+{
+  "name": "snli-glove-bowman-gru-lc-train_fraction=0.5",
+  "dataset": {
+    "k": 5,
+    "data_seed": 0,
+    "rounds": null,
+    "name": "snli",
+    "train_fraction": 0.5
+  },
+  "tokenizer": {
+    "kind": "treebank"
+  },
+  "representation": {
+    "kind": "glove",
+    "dim": 300
+  },
+  "model": {
+    "kind": "bowman",
+    "encoder": "gru",
+    "freeze_embeddings": false
+  },
+  "model_seeds": [
+    0,
+    1
+  ],
+  "metrics": [
+    "accuracy",
+    "macro_f1"
+  ]
+}
